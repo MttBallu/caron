@@ -32,7 +32,7 @@ _EXAMPLES = {
     ),
     "two-contexts": (
         build_two_contexts_candidate,
-        "Caron cross-context development example",
+        "Caron Python across contexts example",
         "two_contexts_graph.html",
     ),
 }
@@ -48,6 +48,7 @@ _KIND_APPEARANCE: dict[str, tuple[str, str]] = {
     "Proposition": ("#c2410c", "diamond"),
     "Organization": ("#0f766e", "round-rectangle"),
     "Place": ("#4338ca", "ellipse"),
+    "ContextualRelation": ("#2563eb", "diamond"),
 }
 
 
@@ -110,6 +111,93 @@ def validated_realisation_to_cytoscape(
         )
 
     for relation in realisation.relations:
+        context_qualifier = next(
+            (
+                qualifier
+                for qualifier in relation.qualifiers
+                if qualifier.name == "context"
+                and isinstance(qualifier.value, EntityRef)
+            ),
+            None,
+        )
+        if context_qualifier is not None:
+            relation_node_id = f"view:contextual-relation:{relation.id}"
+            color, shape = _KIND_APPEARANCE["ContextualRelation"]
+            nodes.append(
+                {
+                    "data": {
+                        "id": relation_node_id,
+                        "kind": "ContextualRelation",
+                        "label": relation.kind,
+                        "color": color,
+                        "shape": shape,
+                        "properties": [
+                            {
+                                "name": "source",
+                                "value": _cytoscape_value(
+                                    relation.source,
+                                    entity_by_id,
+                                ),
+                            },
+                            {
+                                "name": "target",
+                                "value": _cytoscape_value(
+                                    relation.target,
+                                    entity_by_id,
+                                ),
+                            },
+                            *[
+                                {
+                                    "name": item.name,
+                                    "value": _cytoscape_value(
+                                        item.value,
+                                        entity_by_id,
+                                    ),
+                                }
+                                for item in relation.qualifiers
+                            ],
+                        ],
+                    }
+                }
+            )
+            context_ref = context_qualifier.value
+            assert isinstance(context_ref, EntityRef)
+            for role, source, target, label in (
+                (
+                    "source",
+                    relation.source.entity_id,
+                    relation_node_id,
+                    "source",
+                ),
+                (
+                    "target",
+                    relation_node_id,
+                    relation.target.entity_id,
+                    relation.kind,
+                ),
+                (
+                    "context",
+                    relation_node_id,
+                    context_ref.entity_id,
+                    "in context",
+                ),
+            ):
+                edges.append(
+                    {
+                        "data": {
+                            "id": f"{relation.id}:{role}",
+                            "kind": relation.kind,
+                            "label": label,
+                            "source": source,
+                            "target": target,
+                            "qualifiers": [],
+                            "semantic_relation_id": relation.id,
+                            "view_role": role,
+                        }
+                    }
+                )
+            continue
+
         edges.append(
             {
                 "data": {

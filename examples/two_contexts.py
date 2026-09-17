@@ -1,18 +1,17 @@
-"""A career realisation showing development across two meaningful contexts.
+"""Two career contexts connected by practical use of Python.
 
-The example follows the Model 4 examples directly: an optimal-transport
-investigation during a PhD is followed by work on the ``jax-geopro`` open-source
-project. Shared reusable entities connect the contexts; no primitive transfer
-relation is asserted.
+The example follows the Model 4 Python trajectory: ALICE data analysis during
+an MSc and later synthetic-data work during a PhD both use the same Python
+entity. Context is supplied by activities and their ``occurs_in`` relations;
+no primitive transfer or decontextualized person-skill relation is asserted.
 """
 
 from caron import (
     ACTIVITY,
     ARTIFACT,
     CONTEXT,
-    METHOD,
+    ORGANIZATION,
     PERSON,
-    PROPOSITION,
     SUBJECT,
     TECHNOLOGY,
     Coverage,
@@ -29,298 +28,243 @@ from examples.semantic_spine import labelled
 
 
 def build_candidate() -> RealisationCandidate:
-    """Build two evidence-rich contexts joined by reusable career entities."""
+    """Build two evidence-rich activities joined by one Python entity."""
 
     ontology = model4_ontology()
     person = labelled("person:matteo", PERSON, "Mattéo")
 
-    phd_ot = Entity(
-        id="context:phd-optimal-transport",
+    alice_context = Entity(
+        id="context:msc-alice-analysis",
         kind=CONTEXT,
         properties=(
-            Property("label", "PhD — optimal-transport investigation"),
-            Property("start", 2024),
-            Property("end", 2025),
+            Property("label", "MSc — ALICE data-analysis project"),
             Property("status", "completed"),
         ),
     )
-    jax_geopro = Entity(
-        id="context:jax-geopro",
+    synthetic_data_context = Entity(
+        id="context:phd-synthetic-data",
         kind=CONTEXT,
         properties=(
-            Property("label", "jax-geopro open-source project"),
-            Property("start", 2026),
-            Property("status", "ongoing"),
+            Property("label", "PhD — synthetic-data work"),
+            Property("status", "completed"),
         ),
     )
 
-    evaluate_ot = labelled(
-        "activity:evaluate-ot-formulation",
+    analyse_alice_data = labelled(
+        "activity:analyse-alice-data",
         ACTIVITY,
-        "Evaluate optimal-transport formulations",
+        "Analyse ALICE collision data",
     )
-    design_measures = labelled(
-        "activity:design-discrete-measure-abstraction",
+    build_training_dataset = labelled(
+        "activity:build-training-dataset",
         ACTIVITY,
-        "Design a discrete-measure abstraction",
-    )
-    implement_losses = labelled(
-        "activity:implement-ot-losses",
-        ACTIVITY,
-        "Implement differentiable optimal-transport losses",
+        "Build a labelled synthetic training dataset",
     )
 
     python = labelled("technology:python", TECHNOLOGY, "Python")
-    pytorch = labelled("technology:pytorch", TECHNOLOGY, "PyTorch")
-    jax = labelled("technology:jax", TECHNOLOGY, "JAX")
-    optimal_transport = labelled(
-        "method:optimal-transport",
-        METHOD,
-        "Optimal transport",
-    )
-    discrete_measures = labelled(
-        "subject:discrete-measures",
+    root = labelled("technology:root", TECHNOLOGY, "ROOT")
+    polars = labelled("technology:polars", TECHNOLOGY, "Polars")
+    hdf5 = labelled("technology:hdf5", TECHNOLOGY, "HDF5")
+    particle_physics = labelled(
+        "subject:particle-physics",
         SUBJECT,
-        "Discrete measures",
+        "Particle physics",
     )
-    software_design = labelled(
-        "subject:software-design",
+    gamma_spectroscopy = labelled(
+        "subject:gamma-spectroscopy",
         SUBJECT,
-        "Software design",
-    )
-    evaluation_notebook = labelled(
-        "artifact:ot-evaluation-notebook",
-        ARTIFACT,
-        "Optimal-transport evaluation notebook",
-    )
-    codebase = labelled(
-        "artifact:jax-geopro-codebase",
-        ARTIFACT,
-        "jax-geopro codebase",
+        "Gamma spectroscopy",
     )
 
-    phd_question = Entity(
-        id="proposition:phd-ot-question",
-        kind=PROPOSITION,
-        properties=(
-            Property("label", "Evaluate OT for dense regression"),
-            Property(
-                "content",
-                "Determine whether optimal-transport formulations are useful "
-                "for dense spectrum regression.",
-            ),
-            Property("context", EntityRef(phd_ot.id)),
-        ),
+    alice_collaboration = labelled(
+        "organization:alice-collaboration",
+        ORGANIZATION,
+        "ALICE Collaboration",
     )
-    jax_geopro_goal = Entity(
-        id="proposition:jax-geopro-goal",
-        kind=PROPOSITION,
-        properties=(
-            Property("label", "Reusable differentiable loss library"),
-            Property(
-                "content",
-                "A reusable JAX implementation of differentiable losses for "
-                "discrete measures is available.",
-            ),
-            Property("context", EntityRef(jax_geopro.id)),
-        ),
+    alice_dataset = labelled(
+        "artifact:alice-collision-dataset",
+        ARTIFACT,
+        "ALICE collision dataset",
+    )
+    alice_notebook = labelled(
+        "artifact:alice-analysis-notebook",
+        ARTIFACT,
+        "ALICE analysis notebook",
+    )
+    synthetic_codebase = labelled(
+        "artifact:synthetic-data-codebase",
+        ARTIFACT,
+        "Synthetic-data generation codebase",
+    )
+    synthetic_pool = labelled(
+        "artifact:synthetic-data-pool",
+        ARTIFACT,
+        "Synthetic spectrum pool",
+    )
+    generation_metadata = labelled(
+        "artifact:generation-metadata",
+        ARTIFACT,
+        "Generation metadata",
+    )
+    training_dataset = labelled(
+        "artifact:training-dataset",
+        ARTIFACT,
+        "Labelled synthetic training dataset",
     )
 
     relations = (
         RelationAssertion(
-            "relation:participates-in-phd-ot",
+            "relation:participates-in-alice-project",
             "participates_in",
             EntityRef(person.id),
-            EntityRef(phd_ot.id),
+            EntityRef(alice_context.id),
+            (Qualifier("role", "MSc student researcher"),),
+        ),
+        RelationAssertion(
+            "relation:participates-in-synthetic-data-work",
+            "participates_in",
+            EntityRef(person.id),
+            EntityRef(synthetic_data_context.id),
             (Qualifier("role", "doctoral researcher"),),
         ),
         RelationAssertion(
-            "relation:participates-in-jax-geopro",
-            "participates_in",
-            EntityRef(person.id),
-            EntityRef(jax_geopro.id),
-            (Qualifier("role", "open-source maintainer"),),
-        ),
-        RelationAssertion(
-            "relation:performs-evaluate-ot",
+            "relation:performs-alice-analysis",
             "performs",
             EntityRef(person.id),
-            EntityRef(evaluate_ot.id),
+            EntityRef(analyse_alice_data.id),
         ),
         RelationAssertion(
-            "relation:performs-design-measures",
+            "relation:performs-dataset-build",
             "performs",
             EntityRef(person.id),
-            EntityRef(design_measures.id),
+            EntityRef(build_training_dataset.id),
         ),
         RelationAssertion(
-            "relation:performs-implement-losses",
-            "performs",
-            EntityRef(person.id),
-            EntityRef(implement_losses.id),
-        ),
-        RelationAssertion(
-            "relation:evaluate-ot-occurs-in-phd",
+            "relation:alice-analysis-occurs-in-project",
             "occurs_in",
-            EntityRef(evaluate_ot.id),
-            EntityRef(phd_ot.id),
+            EntityRef(analyse_alice_data.id),
+            EntityRef(alice_context.id),
         ),
         RelationAssertion(
-            "relation:design-measures-occurs-in-jax-geopro",
+            "relation:dataset-build-occurs-in-synthetic-work",
             "occurs_in",
-            EntityRef(design_measures.id),
-            EntityRef(jax_geopro.id),
+            EntityRef(build_training_dataset.id),
+            EntityRef(synthetic_data_context.id),
         ),
         RelationAssertion(
-            "relation:implement-losses-occurs-in-jax-geopro",
-            "occurs_in",
-            EntityRef(implement_losses.id),
-            EntityRef(jax_geopro.id),
+            "relation:alice-project-associated-with-collaboration",
+            "associated_with",
+            EntityRef(alice_context.id),
+            EntityRef(alice_collaboration.id),
         ),
         RelationAssertion(
-            "relation:phd-aims-at-ot-question",
-            "aims_at",
-            EntityRef(phd_ot.id),
-            EntityRef(phd_question.id),
-        ),
-        RelationAssertion(
-            "relation:jax-geopro-aims-at-library",
-            "aims_at",
-            EntityRef(jax_geopro.id),
-            EntityRef(jax_geopro_goal.id),
-        ),
-        RelationAssertion(
-            "relation:evaluate-ot-uses-python",
+            "relation:alice-analysis-uses-python",
             "uses",
-            EntityRef(evaluate_ot.id),
+            EntityRef(analyse_alice_data.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
-            "relation:evaluate-ot-uses-pytorch",
+            "relation:alice-analysis-uses-root",
             "uses",
-            EntityRef(evaluate_ot.id),
-            EntityRef(pytorch.id),
+            EntityRef(analyse_alice_data.id),
+            EntityRef(root.id),
         ),
         RelationAssertion(
-            "relation:design-measures-uses-python",
+            "relation:alice-analysis-draws-on-particle-physics",
+            "draws_on",
+            EntityRef(analyse_alice_data.id),
+            EntityRef(particle_physics.id),
+        ),
+        RelationAssertion(
+            "relation:alice-analysis-takes-collision-data",
+            "takes_input",
+            EntityRef(analyse_alice_data.id),
+            EntityRef(alice_dataset.id),
+        ),
+        RelationAssertion(
+            "relation:alice-analysis-produces-notebook",
+            "produces",
+            EntityRef(analyse_alice_data.id),
+            EntityRef(alice_notebook.id),
+        ),
+        RelationAssertion(
+            "relation:dataset-build-uses-python",
             "uses",
-            EntityRef(design_measures.id),
+            EntityRef(build_training_dataset.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
-            "relation:design-measures-uses-jax",
+            "relation:dataset-build-uses-polars",
             "uses",
-            EntityRef(design_measures.id),
-            EntityRef(jax.id),
+            EntityRef(build_training_dataset.id),
+            EntityRef(polars.id),
         ),
         RelationAssertion(
-            "relation:implement-losses-uses-jax",
+            "relation:dataset-build-uses-hdf5",
             "uses",
-            EntityRef(implement_losses.id),
-            EntityRef(jax.id),
+            EntityRef(build_training_dataset.id),
+            EntityRef(hdf5.id),
         ),
         RelationAssertion(
-            "relation:evaluate-ot-applies-optimal-transport",
-            "applies",
-            EntityRef(evaluate_ot.id),
-            EntityRef(optimal_transport.id),
+            "relation:dataset-build-uses-codebase",
+            "uses",
+            EntityRef(build_training_dataset.id),
+            EntityRef(synthetic_codebase.id),
         ),
         RelationAssertion(
-            "relation:implement-losses-applies-optimal-transport",
-            "applies",
-            EntityRef(implement_losses.id),
-            EntityRef(optimal_transport.id),
-        ),
-        RelationAssertion(
-            "relation:evaluate-ot-draws-on-discrete-measures",
+            "relation:dataset-build-draws-on-spectroscopy",
             "draws_on",
-            EntityRef(evaluate_ot.id),
-            EntityRef(discrete_measures.id),
+            EntityRef(build_training_dataset.id),
+            EntityRef(gamma_spectroscopy.id),
         ),
         RelationAssertion(
-            "relation:design-measures-draws-on-discrete-measures",
-            "draws_on",
-            EntityRef(design_measures.id),
-            EntityRef(discrete_measures.id),
+            "relation:dataset-build-takes-pool",
+            "takes_input",
+            EntityRef(build_training_dataset.id),
+            EntityRef(synthetic_pool.id),
         ),
         RelationAssertion(
-            "relation:design-measures-draws-on-software-design",
-            "draws_on",
-            EntityRef(design_measures.id),
-            EntityRef(software_design.id),
+            "relation:dataset-build-takes-metadata",
+            "takes_input",
+            EntityRef(build_training_dataset.id),
+            EntityRef(generation_metadata.id),
         ),
         RelationAssertion(
-            "relation:implement-losses-draws-on-discrete-measures",
-            "draws_on",
-            EntityRef(implement_losses.id),
-            EntityRef(discrete_measures.id),
-        ),
-        RelationAssertion(
-            "relation:evaluate-ot-produces-notebook",
+            "relation:dataset-build-produces-training-dataset",
             "produces",
-            EntityRef(evaluate_ot.id),
-            EntityRef(evaluation_notebook.id),
-        ),
-        RelationAssertion(
-            "relation:design-measures-produces-codebase",
-            "produces",
-            EntityRef(design_measures.id),
-            EntityRef(codebase.id),
-        ),
-        RelationAssertion(
-            "relation:implement-losses-produces-codebase",
-            "produces",
-            EntityRef(implement_losses.id),
-            EntityRef(codebase.id),
-        ),
-        RelationAssertion(
-            "relation:implement-losses-supports-library-goal",
-            "supports",
-            EntityRef(implement_losses.id),
-            EntityRef(jax_geopro_goal.id),
-        ),
-        RelationAssertion(
-            "relation:learns-ot-in-phd",
-            "learns",
-            EntityRef(person.id),
-            EntityRef(optimal_transport.id),
-            (Qualifier("context", EntityRef(phd_ot.id)),),
-        ),
-        RelationAssertion(
-            "relation:deepens-ot-in-jax-geopro",
-            "learns",
-            EntityRef(person.id),
-            EntityRef(optimal_transport.id),
-            (Qualifier("context", EntityRef(jax_geopro.id)),),
+            EntityRef(build_training_dataset.id),
+            EntityRef(training_dataset.id),
         ),
     )
 
     return RealisationCandidate(
-        id="realisation:cross-context-development",
+        id="realisation:python-across-contexts",
         ontology_id=ontology.id,
         ontology_version=ontology.version,
         entities=(
             person,
-            phd_ot,
-            jax_geopro,
-            evaluate_ot,
-            design_measures,
-            implement_losses,
+            alice_context,
+            synthetic_data_context,
+            analyse_alice_data,
+            build_training_dataset,
             python,
-            pytorch,
-            jax,
-            optimal_transport,
-            discrete_measures,
-            software_design,
-            evaluation_notebook,
-            codebase,
-            phd_question,
-            jax_geopro_goal,
+            root,
+            polars,
+            hdf5,
+            particle_physics,
+            gamma_spectroscopy,
+            alice_collaboration,
+            alice_dataset,
+            alice_notebook,
+            synthetic_codebase,
+            synthetic_pool,
+            generation_metadata,
+            training_dataset,
         ),
         relations=relations,
         coverage=Coverage(
             CoverageStatus.SELECTIVE,
-            "Optimal-transport development from a PhD investigation to the "
-            "jax-geopro open-source project",
+            "Python use in an MSc ALICE analysis project and later PhD "
+            "synthetic-data work",
         ),
     )

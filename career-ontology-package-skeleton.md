@@ -124,7 +124,7 @@ All tests run through pytest:
 - deterministic unit tests provide small examples and regressions;
 - Hypothesis tests generate cases and search for counterexamples to invariants.
 
-The implemented suite has 18 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, context-specific activity organization, concrete activity evidence, and cross-context reuse without explicit transfer edges.
+The implemented suite has 19 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, visible context anchoring for contextual relations, context-specific activity organization, concrete activity evidence, and cross-context Python reuse without explicit transfer edges.
 
 Hypothesis increases confidence in invariants; it is not a formal proof system.
 
@@ -154,7 +154,7 @@ uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
 ```
 
-Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example organizes three evidence-rich activities between a PhD optimal-transport investigation and the later `jax-geopro` project. Python, optimal transport, and discrete measures retain their identities across both contexts; no transfer relation is asserted. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
+Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example connects ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD through one shared Python entity. Each activity remains grounded in its own context and concrete evidence; no transfer relation is asserted. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
 
 ## 7. Visualization experiment boundary
 
@@ -167,7 +167,7 @@ ValidatedRealisation (temporary GraphView stand-in)
     -> graph canvas + inspector state
 ```
 
-The renderer preserves all entity properties and relation qualifiers. The browser presents long values such as proposition `content` in collapsed disclosure sections, supports entity and relation filters, and highlights a selected neighborhood.
+The renderer preserves all entity properties and relation qualifiers. A relation carrying a context qualifier is projected as a renderer-only relation-occurrence node connected to its source, target, and context; this prevents the n-ary semantics of relations such as `learns` from appearing as an unqualified binary edge. The browser presents long values such as proposition `content` in collapsed disclosure sections, supports entity and relation filters, and highlights a selected neighborhood.
 
 The selected element, collapsed properties, focus, and filters are presentation state. They do not mutate the validated semantic value. When the query layer introduces `GraphView`, the adapter input will change from `ValidatedRealisation` to `GraphView`; the renderer-specific JSON must remain outside the model and query contracts.
 

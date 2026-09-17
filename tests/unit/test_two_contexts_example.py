@@ -1,4 +1,4 @@
-"""Behavioral checks for the cross-context development example."""
+"""Behavioral checks for the Python cross-context example."""
 
 from caron import Accepted, EntityRef, model4_ontology, validate_candidate
 from examples.two_contexts import build_candidate
@@ -19,54 +19,37 @@ def test_contexts_organize_their_own_activities() -> None:
     }
 
     assert activity_contexts == {
-        "activity:evaluate-ot-formulation": "context:phd-optimal-transport",
-        "activity:design-discrete-measure-abstraction": "context:jax-geopro",
-        "activity:implement-ot-losses": "context:jax-geopro",
+        "activity:analyse-alice-data": "context:msc-alice-analysis",
+        "activity:build-training-dataset": "context:phd-synthetic-data",
     }
 
 
-def test_reusable_entities_connect_the_contexts_without_transfer_edges() -> None:
+def test_python_connects_alice_analysis_and_synthetic_data_work() -> None:
     candidate = build_candidate()
-    activity_contexts = {
-        relation.source.entity_id: relation.target.entity_id
+    python_uses = {
+        relation.source.entity_id
         for relation in candidate.relations
-        if relation.kind == "occurs_in"
+        if relation.kind == "uses" and relation.target == EntityRef("technology:python")
     }
 
-    def contexts_using(kind: str, target_id: str) -> set[str]:
-        return {
-            activity_contexts[relation.source.entity_id]
-            for relation in candidate.relations
-            if relation.kind == kind and relation.target == EntityRef(target_id)
-        }
-
-    expected_contexts = {
-        "context:phd-optimal-transport",
-        "context:jax-geopro",
+    assert python_uses == {
+        "activity:analyse-alice-data",
+        "activity:build-training-dataset",
     }
-    assert contexts_using("uses", "technology:python") == expected_contexts
-    assert contexts_using("applies", "method:optimal-transport") == expected_contexts
-    assert contexts_using("draws_on", "subject:discrete-measures") == expected_contexts
     assert all("transfer" not in relation.kind for relation in candidate.relations)
 
 
-def test_every_activity_has_concrete_semantic_evidence() -> None:
+def test_each_activity_has_input_output_and_domain_evidence() -> None:
     candidate = build_candidate()
     activity_ids = {
         entity.id for entity in candidate.entities if entity.kind == "Activity"
     }
-    evidence_relations = {"uses", "applies", "draws_on", "produces", "supports"}
-    evidence_by_activity = {
-        activity_id: {
+    required_relation_kinds = {"uses", "draws_on", "takes_input", "produces"}
+
+    for activity_id in activity_ids:
+        actual_relation_kinds = {
             relation.kind
             for relation in candidate.relations
             if relation.source == EntityRef(activity_id)
-            and relation.kind in evidence_relations
         }
-        for activity_id in activity_ids
-    }
-
-    assert all(
-        {"uses", "produces"} <= relation_kinds
-        for relation_kinds in evidence_by_activity.values()
-    )
+        assert required_relation_kinds <= actual_relation_kinds
