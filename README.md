@@ -57,12 +57,18 @@ uv build
 GitHub Actions runs these checks on pushes to `main` and on pull requests.
 The tests include deterministic pytest cases and Hypothesis invariant tests.
 
-## Scope and next increment
+## Scope and next increments
+
+The current model-design priority is the temporal extension for ontology v0.5.
+Its semantics and review are recorded in the
+[temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and the
+[contract review](docs/career-model-v0.5-temporal-contract-review.md). No
+temporal implementation is included yet.
 
 Retrieval, `GraphView`, serialization, storage, and CLI behavior remain deferred.
-The next increment is one typed `ActivitiesInContext` retrieval with bindings,
-witnesses, coverage, diagnostics, and an immutable `GraphView`.
+The planned retrieval increment is one typed `ActivitiesInContext` query with
+bindings, witnesses, coverage, diagnostics, and an immutable `GraphView`.
 
-See the [implementation overview](career-ontology-package-skeleton.md),
+See also the [implementation overview](career-ontology-package-skeleton.md),
 [package boundaries](docs/career-ontology-package-boundaries.md), and
 [entity representation notes](docs/career-ontology-entity-representation-pseudocode.md).
