@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caron graph viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.34.1/dist/cytoscape.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f4f6f8;
+      --border: #d8dee8;
+      --muted: #64748b;
+      --surface: #ffffff;
+      --accent: #2563eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6f8;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 68px;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0.2rem 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .coverage {
+      max-width: 48ch;
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      color: #1e3a5f;
+      background: #e0f2fe;
+      font-size: 0.76rem;
+      line-height: 1.25;
+      text-align: right;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(270px, 350px);
+      height: calc(100vh - 68px);
+      min-height: 560px;
+    }
+
+    aside,
+    .inspector {
+      overflow: auto;
+      background: var(--surface);
+    }
+
+    aside {
+      padding: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .inspector {
+      padding: 1.1rem;
+      border-left: 1px solid var(--border);
+    }
+
+    .graph-panel {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #graph {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.05), transparent 28%),
+        #f8fafc;
+    }
+
+    .section-title {
+      margin: 0 0 0.65rem;
+      color: #334155;
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .filter-section + .filter-section { margin-top: 1.25rem; }
+
+    .filter-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .filter-option input { accent-color: var(--accent); }
+
+    .kind-dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      flex: none;
+      border-radius: 50%;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 1.25rem;
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      border-radius: 0.45rem;
+      padding: 0.45rem 0.6rem;
+      color: #1e293b;
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { background: #f1f5f9; }
+
+    .empty-state {
+      margin: 3rem 0;
+      color: var(--muted);
+      font-size: 0.87rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .kind-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: #334155;
+      background: #f8fafc;
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .inspector h2 {
+      margin: 0;
+      font-size: 1.12rem;
+      line-height: 1.25;
+    }
+
+    .record-id {
+      display: block;
+      margin: 0.45rem 0 1.2rem;
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .property-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .property,
+    details.property {
+      margin: 0;
+      padding: 0.7rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.55rem;
+      background: #fbfdff;
+    }
+
+    .property-name,
+    details.property summary {
+      color: #475569;
+      font-size: 0.7rem;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    details.property summary { cursor: pointer; }
+
+    .property-value {
+      margin-top: 0.4rem;
+      color: #1e293b;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .reference-button {
+      padding: 0;
+      border: 0;
+      color: #1d4ed8;
+      background: transparent;
+      font-weight: 650;
+      text-align: left;
+    }
+
+    .connections {
+      display: grid;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+    }
+
+    .connection {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.45rem;
+      align-items: start;
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 0.76rem;
+      text-align: left;
+    }
+
+    .direction {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .connection-kind { font-weight: 700; }
+
+    .inspector-section { margin-top: 1.35rem; }
+
+    .error-banner {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      top: 1rem;
+      right: 1rem;
+      left: 1rem;
+      padding: 0.8rem;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      color: #991b1b;
+      background: #fef2f2;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 900px) {
+      header { align-items: flex-start; }
+      .coverage { display: none; }
+      main {
+        grid-template-columns: 180px minmax(0, 1fr);
+        grid-template-rows: minmax(440px, 62vh) auto;
+        height: auto;
+      }
+      aside { grid-row: 1 / span 2; }
+      .inspector {
+        grid-column: 2;
+        min-height: 300px;
+        border-top: 1px solid var(--border);
+        border-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="view-title">Caron graph viewer</h1>
+      <p class="subtitle" id="view-subtitle"></p>
+    </div>
+    <div class="coverage" id="coverage"></div>
+  </header>
+
+  <main>
+    <aside aria-label="Graph controls">
+      <div class="toolbar">
+        <button id="fit-button" type="button">Fit graph</button>
+        <button id="clear-button" type="button">Clear focus</button>
+      </div>
+
+      <section class="filter-section">
+        <h2 class="section-title">Entity kinds</h2>
+        <div class="filter-list" id="node-filters"></div>
+      </section>
+
+      <section class="filter-section">
+        <h2 class="section-title">Relations</h2>
+        <div class="filter-list" id="edge-filters"></div>
+      </section>
+    </aside>
+
+    <section class="graph-panel">
+      <div class="error-banner" id="error-banner"></div>
+      <div id="graph" aria-label="Interactive career graph"></div>
+    </section>
+
+    <section class="inspector" aria-live="polite">
+      <div id="inspector-content">
+        <p class="empty-state">
+          Select an entity or relation to inspect its semantic details.
+          Long properties such as <code>content</code> remain collapsed until requested.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const graphData = {"metadata":{"title":"Caron semantic-spine example","realisation_id":"realisation:career-example","ontology_id":"caron.career-model","ontology_version":"4","coverage":{"status":"selective","scope":"One PhD activity and the evidence directly attached to it"}},"nodes":[{"data":{"id":"person:matteo","kind":"Person","label":"Mattéo","color":"#7c3aed","shape":"ellipse","properties":[]}},{"data":{"id":"context:phd","kind":"Context","label":"Nuclear-physics PhD","color":"#0369a1","shape":"round-rectangle","properties":[{"name":"start","value":{"type":"integer","value":2022}},{"name":"status","value":{"type":"text","value":"completed"}}]}},{"data":{"id":"activity:analyse-gamma-cascades","kind":"Activity","label":"Analyse delayed gamma cascades","color":"#047857","shape":"round-rectangle","properties":[]}},{"data":{"id":"technology:python","kind":"Technology","label":"Python","color":"#b45309","shape":"hexagon","properties":[]}},{"data":{"id":"method:peak-fitting","kind":"Method","label":"Peak fitting","color":"#be123c","shape":"diamond","properties":[]}},{"data":{"id":"subject:gamma-spectroscopy","kind":"Subject","label":"Gamma spectroscopy","color":"#6d28d9","shape":"tag","properties":[]}},{"data":{"id":"artifact:coincidence-spectrum","kind":"Artifact","label":"Gamma-gamma coincidence spectrum","color":"#475569","shape":"rectangle","properties":[]}},{"data":{"id":"artifact:discrepancy-report","kind":"Artifact","label":"Rb-90 discrepancy report","color":"#475569","shape":"rectangle","properties":[]}},{"data":{"id":"proposition:rb90-discrepancy","kind":"Proposition","label":"Rb-90 cascade discrepancy","color":"#c2410c","shape":"diamond","properties":[{"name":"content","value":{"type":"text","value":"The measured cascade intensity differs from evaluated data."}},{"name":"context","value":{"type":"entity_reference","entity_id":"context:phd","label":"Nuclear-physics PhD","kind":"Context"}}]}}],"edges":[{"data":{"id":"relation:participation","kind":"participates_in","label":"participates_in","source":"person:matteo","target":"context:phd","qualifiers":[{"name":"role","value":{"type":"text","value":"doctoral researcher"}}]}},{"data":{"id":"relation:performs","kind":"performs","label":"performs","source":"person:matteo","target":"activity:analyse-gamma-cascades","qualifiers":[]}},{"data":{"id":"relation:occurs-in","kind":"occurs_in","label":"occurs_in","source":"activity:analyse-gamma-cascades","target":"context:phd","qualifiers":[]}},{"data":{"id":"relation:uses-python","kind":"uses","label":"uses","source":"activity:analyse-gamma-cascades","target":"technology:python","qualifiers":[]}},{"data":{"id":"relation:applies-fitting","kind":"applies","label":"applies","source":"activity:analyse-gamma-cascades","target":"method:peak-fitting","qualifiers":[]}},{"data":{"id":"relation:draws-on-spectroscopy","kind":"draws_on","label":"draws_on","source":"activity:analyse-gamma-cascades","target":"subject:gamma-spectroscopy","qualifiers":[]}},{"data":{"id":"relation:takes-spectrum","kind":"takes_input","label":"takes_input","source":"activity:analyse-gamma-cascades","target":"artifact:coincidence-spectrum","qualifiers":[]}},{"data":{"id":"relation:produces-report","kind":"produces","label":"produces","source":"activity:analyse-gamma-cascades","target":"artifact:discrepancy-report","qualifiers":[]}},{"data":{"id":"relation:establishes-discrepancy","kind":"establishes","label":"establishes","source":"activity:analyse-gamma-cascades","target":"proposition:rb90-discrepancy","qualifiers":[]}},{"data":{"id":"relation:learns-fitting","kind":"learns","label":"learns","source":"person:matteo","target":"method:peak-fitting","qualifiers":[{"name":"context","value":{"type":"entity_reference","entity_id":"context:phd","label":"Nuclear-physics PhD","kind":"Context"}}]}}]};
+
+    const inspector = document.getElementById("inspector-content");
+    const errorBanner = document.getElementById("error-banner");
+    const selectedNodeKinds = new Set(graphData.nodes.map(node => node.data.kind));
+    const selectedEdgeKinds = new Set(graphData.edges.map(edge => edge.data.kind));
+
+    document.title = graphData.metadata.title;
+    document.getElementById("view-title").textContent = graphData.metadata.title;
+    document.getElementById("view-subtitle").textContent =
+      `${graphData.metadata.ontology_id} · version ${graphData.metadata.ontology_version}`;
+    document.getElementById("coverage").textContent =
+      `${graphData.metadata.coverage.status}: ${graphData.metadata.coverage.scope}`;
+
+    if (typeof cytoscape === "undefined") {
+      errorBanner.style.display = "block";
+      errorBanner.textContent =
+        "Cytoscape.js could not be loaded. This experiment currently requires an internet connection.";
+      throw new Error("Cytoscape.js is unavailable");
+    }
+
+    const cy = cytoscape({
+      container: document.getElementById("graph"),
+      elements: [...graphData.nodes, ...graphData.edges],
+      layout: {
+        name: "cose",
+        animate: false,
+        randomize: true,
+        idealEdgeLength: 130,
+        nodeOverlap: 24,
+        padding: 42
+      },
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "data(color)",
+            "border-color": "#ffffff",
+            "border-width": 2,
+            "color": "#172033",
+            "font-size": 11,
+            "font-weight": 650,
+            "height": 42,
+            "label": "data(label)",
+            "shape": "data(shape)",
+            "text-background-color": "#ffffff",
+            "text-background-opacity": 0.88,
+            "text-background-padding": 3,
+            "text-margin-y": 7,
+            "text-valign": "bottom",
+            "width": 42
+          }
+        },
+        {
+          selector: "edge",
+          style: {
+            "curve-style": "bezier",
+            "font-size": 8,
+            "label": "data(label)",
+            "line-color": "#94a3b8",
+            "target-arrow-color": "#94a3b8",
+            "target-arrow-shape": "triangle",
+            "text-background-color": "#f8fafc",
+            "text-background-opacity": 0.9,
+            "text-background-padding": 2,
+            "text-rotation": "autorotate",
+            "width": 1.5
+          }
+        },
+        {
+          selector: ".dimmed",
+          style: { "opacity": 0.14, "text-opacity": 0.08 }
+        },
+        {
+          selector: ".focused-node",
+          style: {
+            "border-color": "#0f172a",
+            "border-width": 4,
+            "height": 50,
+            "width": 50,
+            "z-index": 20
+          }
+        },
+        {
+          selector: ".focused-edge",
+          style: {
+            "line-color": "#2563eb",
+            "target-arrow-color": "#2563eb",
+            "width": 4,
+            "z-index": 20
+          }
+        },
+        {
+          selector: ".filtered",
+          style: { "display": "none" }
+        }
+      ]
+    });
+
+    function clearChildren(element) {
+      while (element.firstChild) element.removeChild(element.firstChild);
+    }
+
+    function element(tag, className, text) {
+      const result = document.createElement(tag);
+      if (className) result.className = className;
+      if (text !== undefined) result.textContent = text;
+      return result;
+    }
+
+    function clearFocus() {
+      cy.elements().removeClass("dimmed focused-node focused-edge");
+    }
+
+    function focusNode(node) {
+      clearFocus();
+      cy.elements().addClass("dimmed");
+      node.closedNeighborhood().removeClass("dimmed");
+      node.addClass("focused-node");
+      cy.animate({ center: { eles: node }, duration: 180 });
+    }
+
+    function focusEdge(edge) {
+      clearFocus();
+      cy.elements().addClass("dimmed");
+      edge.removeClass("dimmed").addClass("focused-edge");
+      edge.connectedNodes().removeClass("dimmed");
+      cy.animate({ center: { eles: edge }, duration: 180 });
+    }
+
+    function referenceButton(value) {
+      const button = element(
+        "button",
+        "reference-button",
+        `${value.label} (${value.kind})`
+      );
+      button.type = "button";
+      button.addEventListener("click", () => {
+        const target = cy.getElementById(value.entity_id);
+        if (target.nonempty()) {
+          target.select();
+          focusNode(target);
+          renderNode(target);
+        }
+      });
+      return button;
+    }
+
+    function renderedValue(value) {
+      if (value.type === "entity_reference") return referenceButton(value);
+      return element("div", "property-value", String(value.value));
+    }
+
+    function propertyCard(property) {
+      const scalarText = property.value.value === undefined
+        ? ""
+        : String(property.value.value);
+      const isLong = property.name === "content" || scalarText.length > 120;
+      const card = element(isLong ? "details" : "div", "property");
+
+      if (isLong) {
+        card.appendChild(element("summary", "", property.name));
+        card.appendChild(renderedValue(property.value));
+      } else {
+        card.appendChild(element("div", "property-name", property.name));
+        card.appendChild(renderedValue(property.value));
+      }
+      return card;
+    }
+
+    function badge(kind, color) {
+      const result = element("div", "kind-badge");
+      const dot = element("span", "kind-dot");
+      dot.style.backgroundColor = color || "#64748b";
+      result.append(dot, document.createTextNode(kind));
+      return result;
+    }
+
+    function appendProperties(properties) {
+      if (!properties.length) return;
+      const section = element("section", "inspector-section");
+      section.appendChild(element("h3", "section-title", "Properties"));
+      const list = element("div", "property-list");
+      properties.forEach(property => list.appendChild(propertyCard(property)));
+      section.appendChild(list);
+      inspector.appendChild(section);
+    }
+
+    function connectionButton(edge, nodeId) {
+      const edgeData = edge.data();
+      const outgoing = edgeData.source === nodeId;
+      const otherId = outgoing ? edgeData.target : edgeData.source;
+      const other = cy.getElementById(otherId);
+      const button = element("button", "connection");
+      button.type = "button";
+      button.appendChild(element("span", "direction", outgoing ? "→" : "←"));
+      const text = element("span");
+      text.appendChild(element("span", "connection-kind", edgeData.kind));
+      text.appendChild(document.createTextNode(` · ${other.data("label")}`));
+      button.appendChild(text);
+      button.addEventListener("click", () => {
+        edge.select();
+        focusEdge(edge);
+        renderEdge(edge);
+      });
+      return button;
+    }
+
+    function appendConnections(node) {
+      const connections = node.connectedEdges();
+      if (connections.empty()) return;
+      const section = element("section", "inspector-section");
+      section.appendChild(element("h3", "section-title", "Relations"));
+      const list = element("div", "connections");
+      connections.forEach(edge => list.appendChild(connectionButton(edge, node.id())));
+      section.appendChild(list);
+      inspector.appendChild(section);
+    }
+
+    function renderNode(node) {
+      clearChildren(inspector);
+      const data = node.data();
+      inspector.appendChild(badge(data.kind, data.color));
+      inspector.appendChild(element("h2", "", data.label));
+      inspector.appendChild(element("code", "record-id", data.id));
+      appendProperties(data.properties || []);
+      appendConnections(node);
+    }
+
+    function endpointProperty(name, node) {
+      return {
+        name,
+        value: {
+          type: "entity_reference",
+          entity_id: node.id(),
+          label: node.data("label"),
+          kind: node.data("kind")
+        }
+      };
+    }
+
+    function renderEdge(edge) {
+      clearChildren(inspector);
+      const data = edge.data();
+      inspector.appendChild(badge("Relation", "#2563eb"));
+      inspector.appendChild(element("h2", "", data.kind));
+      inspector.appendChild(element("code", "record-id", data.id));
+      appendProperties([
+        endpointProperty("source", edge.source()),
+        endpointProperty("target", edge.target()),
+        ...(data.qualifiers || [])
+      ]);
+    }
+
+    function emptyInspector() {
+      clearChildren(inspector);
+      inspector.appendChild(
+        element(
+          "p",
+          "empty-state",
+          "Select an entity or relation to inspect its semantic details."
+        )
+      );
+    }
+
+    function applyFilters() {
+      cy.batch(() => {
+        cy.nodes().forEach(node => {
+          node.toggleClass("filtered", !selectedNodeKinds.has(node.data("kind")));
+        });
+        cy.edges().forEach(edge => {
+          edge.toggleClass("filtered", !selectedEdgeKinds.has(edge.data("kind")));
+        });
+      });
+    }
+
+    function addFilter(container, value, checkedSet, color) {
+      const label = element("label", "filter-option");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = true;
+      input.addEventListener("change", () => {
+        if (input.checked) checkedSet.add(value);
+        else checkedSet.delete(value);
+        applyFilters();
+      });
+      label.appendChild(input);
+      if (color) {
+        const dot = element("span", "kind-dot");
+        dot.style.backgroundColor = color;
+        label.appendChild(dot);
+      }
+      label.appendChild(document.createTextNode(value));
+      container.appendChild(label);
+    }
+
+    const nodeFilters = document.getElementById("node-filters");
+    const edgeFilters = document.getElementById("edge-filters");
+    const nodeKinds = [...selectedNodeKinds].sort();
+    const edgeKinds = [...selectedEdgeKinds].sort();
+
+    nodeKinds.forEach(kind => {
+      const example = graphData.nodes.find(node => node.data.kind === kind);
+      addFilter(nodeFilters, kind, selectedNodeKinds, example.data.color);
+    });
+    edgeKinds.forEach(kind => addFilter(edgeFilters, kind, selectedEdgeKinds));
+
+    cy.on("tap", "node", event => {
+      focusNode(event.target);
+      renderNode(event.target);
+    });
+
+    cy.on("tap", "edge", event => {
+      focusEdge(event.target);
+      renderEdge(event.target);
+    });
+
+    cy.on("tap", event => {
+      if (event.target === cy) {
+        clearFocus();
+        emptyInspector();
+      }
+    });
+
+    document.getElementById("fit-button").addEventListener("click", () => {
+      const visible = cy.elements().filter(item => item.visible());
+      cy.fit(visible, 42);
+    });
+
+    document.getElementById("clear-button").addEventListener("click", () => {
+      clearFocus();
+      emptyInspector();
+    });
+  </script>
+</body>
+</html>
