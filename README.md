@@ -24,9 +24,11 @@ uv run python -m examples.cytoscape_html --example two-contexts
 ```
 
 The first command generates `examples/career_graph.html`. The second generates
-`examples/two_contexts_graph.html`, where two activities in distinct contexts
-both point to one shared Python entity. Generated graph files are ignored by
-Git; regenerate them locally when needed.
+`examples/two_contexts_graph.html`, where a PhD optimal-transport investigation
+and the later `jax-geopro` project contain three evidence-rich activities.
+Shared Python, optimal transport, and discrete measures connect the contexts
+without an explicit transfer edge. Generated graph files are ignored by Git;
+regenerate them locally when needed.
 
 Open either file in a browser to explore the graph, inspect entities and
 relations, expand long properties, follow references, and filter entity or

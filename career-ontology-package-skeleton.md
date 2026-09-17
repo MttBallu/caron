@@ -124,7 +124,7 @@ All tests run through pytest:
 - deterministic unit tests provide small examples and regressions;
 - Hypothesis tests generate cases and search for counterexamples to invariants.
 
-The implemented suite has 16 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, and reuse of one technology across activities in distinct contexts.
+The implemented suite has 18 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, context-specific activity organization, concrete activity evidence, and cross-context reuse without explicit transfer edges.
 
 Hypothesis increases confidence in invariants; it is not a formal proof system.
 
@@ -154,7 +154,7 @@ uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
 ```
 
-Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The two-context example represents two activities connected to a single shared Python entity. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
+Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example organizes three evidence-rich activities between a PhD optimal-transport investigation and the later `jax-geopro` project. Python, optimal transport, and discrete measures retain their identities across both contexts; no transfer relation is asserted. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
 
 ## 7. Visualization experiment boundary
 

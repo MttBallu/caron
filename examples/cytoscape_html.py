@@ -32,7 +32,7 @@ _EXAMPLES = {
     ),
     "two-contexts": (
         build_two_contexts_candidate,
-        "Caron two-context example",
+        "Caron cross-context development example",
         "two_contexts_graph.html",
     ),
 }
