@@ -43,14 +43,15 @@ career-ontology/
 ├── examples/
 │   ├── __init__.py
 │   ├── semantic_spine.py
+│   ├── two_contexts.py
 │   ├── cytoscape_html.py
-│   ├── cytoscape_template.html
-│   └── career_graph.html
+│   └── cytoscape_template.html
 └── tests/
     ├── fixtures/
     ├── unit/
     │   ├── test_cytoscape_example.py
     │   ├── test_ontology.py
+    │   ├── test_two_contexts_example.py
     │   └── test_validation.py
     └── invariants/
         └── test_validation_invariants.py
@@ -123,7 +124,7 @@ All tests run through pytest:
 - deterministic unit tests provide small examples and regressions;
 - Hypothesis tests generate cases and search for counterexamples to invariants.
 
-The implemented suite has 14 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, and HTML generation.
+The implemented suite has 16 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, and reuse of one technology across activities in distinct contexts.
 
 Hypothesis increases confidence in invariants; it is not a formal proof system.
 
@@ -150,9 +151,10 @@ Generate the interactive visualization example with:
 
 ```bash
 uv run python -m examples.cytoscape_html
+uv run python -m examples.cytoscape_html --example two-contexts
 ```
 
-Then open `examples/career_graph.html` in a browser. The generated page loads the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when the page is opened.
+Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The two-context example represents two activities connected to a single shared Python entity. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
 
 ## 7. Visualization experiment boundary
 

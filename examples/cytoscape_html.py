@@ -1,4 +1,4 @@
-"""Generate an interactive Cytoscape.js viewer for the semantic-spine example.
+"""Generate interactive Cytoscape.js viewers for the maintained examples.
 
 ``ValidatedRealisation`` is used as a temporary renderer input because the
 query engine and ``GraphView`` do not exist yet. The renderer stays under
@@ -8,6 +8,7 @@ API prematurely.
 Run from the project root with::
 
     uv run python -m examples.cytoscape_html
+    uv run python -m examples.cytoscape_html --example two-contexts
 """
 
 import argparse
@@ -16,11 +17,25 @@ from pathlib import Path
 
 from caron import Entity, EntityRef, ValidatedRealisation
 from caron.entities import PropertyValue
-from examples.semantic_spine import build_candidate, validate_example
+from examples.semantic_spine import build_candidate as build_semantic_spine_candidate
+from examples.semantic_spine import validate_example
+from examples.two_contexts import build_candidate as build_two_contexts_candidate
 
 _TEMPLATE_TOKEN = "__CARON_GRAPH_DATA__"
 _DEFAULT_TEMPLATE = Path(__file__).with_name("cytoscape_template.html")
-_DEFAULT_OUTPUT = Path(__file__).with_name("career_graph.html")
+
+_EXAMPLES = {
+    "semantic-spine": (
+        build_semantic_spine_candidate,
+        "Caron semantic-spine example",
+        "career_graph.html",
+    ),
+    "two-contexts": (
+        build_two_contexts_candidate,
+        "Caron two-context example",
+        "two_contexts_graph.html",
+    ),
+}
 
 _KIND_APPEARANCE: dict[str, tuple[str, str]] = {
     "Person": ("#7c3aed", "ellipse"),
@@ -63,6 +78,8 @@ def _cytoscape_value(
 
 def validated_realisation_to_cytoscape(
     realisation: ValidatedRealisation,
+    *,
+    title: str = "Caron semantic-spine example",
 ) -> dict[str, object]:
     """Adapt a validated value to renderer-specific, JSON-compatible data."""
 
@@ -114,7 +131,7 @@ def validated_realisation_to_cytoscape(
 
     return {
         "metadata": {
-            "title": "Caron semantic-spine example",
+            "title": title,
             "realisation_id": realisation.id,
             "ontology_id": realisation.ontology.id,
             "ontology_version": realisation.ontology.version,
@@ -144,13 +161,14 @@ def render_cytoscape_html(
     output: Path,
     *,
     template: Path = _DEFAULT_TEMPLATE,
+    title: str = "Caron semantic-spine example",
 ) -> None:
     """Render a browser viewer while keeping semantic values unchanged."""
 
     template_text = template.read_text(encoding="utf-8")
     if template_text.count(_TEMPLATE_TOKEN) != 1:
         raise ValueError(f"Template must contain {_TEMPLATE_TOKEN!r} exactly once")
-    graph_data = validated_realisation_to_cytoscape(realisation)
+    graph_data = validated_realisation_to_cytoscape(realisation, title=title)
     rendered = template_text.replace(_TEMPLATE_TOKEN, _script_safe_json(graph_data))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(rendered, encoding="utf-8")
@@ -158,19 +176,26 @@ def render_cytoscape_html(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate the interactive caron Cytoscape.js example."
+        description="Generate an interactive caron Cytoscape.js example."
+    )
+    parser.add_argument(
+        "--example",
+        choices=tuple(_EXAMPLES),
+        default="semantic-spine",
+        help="Example realisation to render (default: semantic-spine)",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=_DEFAULT_OUTPUT,
-        help=f"HTML destination (default: {_DEFAULT_OUTPUT})",
+        help="HTML destination (default: examples/<example>_graph.html)",
     )
     arguments = parser.parse_args()
 
-    realisation = validate_example(build_candidate())
-    render_cytoscape_html(realisation, arguments.output)
-    print(f"Wrote {arguments.output}")
+    candidate_factory, title, default_filename = _EXAMPLES[arguments.example]
+    output = arguments.output or Path(__file__).with_name(default_filename)
+    realisation = validate_example(candidate_factory())
+    render_cytoscape_html(realisation, output, title=title)
+    print(f"Wrote {output}")
 
 
 if __name__ == "__main__":

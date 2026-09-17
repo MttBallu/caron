@@ -16,16 +16,22 @@ uv sync --locked --all-groups
 uv run python -m examples.semantic_spine
 ```
 
-## Interactive example
+## Interactive examples
 
 ```bash
 uv run python -m examples.cytoscape_html
+uv run python -m examples.cytoscape_html --example two-contexts
 ```
 
-Open `examples/career_graph.html` in a browser to explore the graph, inspect
-entities and relations, expand long properties, follow references, and filter
-entity or relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr,
-so an internet connection is required when opening it.
+The first command generates `examples/career_graph.html`. The second generates
+`examples/two_contexts_graph.html`, where two activities in distinct contexts
+both point to one shared Python entity. Generated graph files are ignored by
+Git; regenerate them locally when needed.
+
+Open either file in a browser to explore the graph, inspect entities and
+relations, expand long properties, follow references, and filter entity or
+relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr, so an
+internet connection is required when opening it.
 
 The experimental adapter currently consumes `ValidatedRealisation`. It lives
 under `examples/` and will accept `GraphView` once retrieval is implemented.
@@ -39,7 +45,7 @@ uv run mypy caron tests examples
 uv run pytest
 uv run python -m examples.semantic_spine
 uv run python -m examples.cytoscape_html
-git diff --exit-code -- examples/career_graph.html
+uv run python -m examples.cytoscape_html --example two-contexts
 uv build
 ```
 
