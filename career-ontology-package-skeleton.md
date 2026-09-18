@@ -1,8 +1,8 @@
 ---
 kind: package_skeleton
-status: implemented_semantic_spine
+status: implemented_temporal_query_spine
 architecture_contract: 0.2
-implementation_status: semantic_validation_complete
+implementation_status: temporal_validation_and_queries_complete
 ---
 
 # Career Ontology — First Executable Spine
@@ -11,7 +11,7 @@ implementation_status: semantic_validation_complete
 
 This directory contains the first maintained executable spine. The distribution and import package are both named `caron`.
 
-The current increment implements:
+The maintained implementation includes:
 
 - an explicit, immutable ontology schema;
 - generic immutable entity and relation records;
@@ -19,8 +19,12 @@ The current increment implements:
 - structured diagnostics at ontology, local-record, and realisation layers;
 - an immutable validated realisation constructible only through validation;
 - semantic rules for the first executable encoding of career model 4.
+- a distinct career model v0.5 schema with month-level context temporality;
+- immutable temporal values and local and transitive containment validation;
+- typed temporal predicates and covered-month results with explicit epistemic classifications;
+- witness-preserving immutable `GraphView` query selections.
 
-Retrieval, `GraphView`, persistence, serialization, application orchestration, and CLI behavior are deliberately absent. An interaction-layer visualization experiment exists under `examples/`, but it is not part of the public package API.
+General retrieval, persistence, serialization, application orchestration, and CLI behavior remain absent. The temporal query catalogue is deliberately small. An interaction-layer visualization experiment exists under `examples/`, but it is not part of the public package API.
 
 ## 2. Project tree
 
@@ -35,6 +39,9 @@ career-ontology/
 │   ├── entities.py
 │   ├── relations.py
 │   ├── realisations.py
+│   ├── temporal.py
+│   ├── queries.py
+│   ├── views.py
 │   ├── diagnostics.py
 │   └── validation.py
 ├── docs/
@@ -43,6 +50,7 @@ career-ontology/
 ├── examples/
 │   ├── __init__.py
 │   ├── semantic_spine.py
+│   ├── temporal_queries.py
 │   ├── two_contexts.py
 │   ├── cytoscape_html.py
 │   └── cytoscape_template.html
@@ -67,6 +75,9 @@ The package uses a direct layout: importable sources live in `caron/`, not `src/
 | `entities.py` | Entity records, identifiers, values, entity references | Relation semantics, validation policy |
 | `relations.py` | Relation assertions and qualifiers | Traversal algorithms, interpretation |
 | `realisations.py` | Candidate and validated forms, coverage, direct immutable reads | Decoding, storage, narrative answers |
+| `temporal.py` | `YearMonth`, temporal end states, extents, and windows | Graph traversal, query evaluation, rendering |
+| `queries.py` | Typed temporal predicates, window selection, covered-month results, and private constraint composition | Persistence, serialization, prose answers |
+| `views.py` | Immutable `GraphView`, bindings, and witnesses | Query evaluation and renderer-specific state |
 | `diagnostics.py` | Stable codes, severity, layer attribution | Validation control flow |
 | `validation.py` | Ontology, local-record, and whole-realisation validation | Parsing, database access, query evaluation |
 | `__init__.py` | Deliberate public re-exports | Private implementation details |
@@ -82,6 +93,7 @@ ontology:
   - RelationDefinition
   - RelationRequirement
   - model4_ontology
+  - model_v0_5_ontology
 
 semantic_records:
   - Entity
@@ -92,6 +104,9 @@ semantic_records:
   - RealisationCandidate
   - ValidatedRealisation
   - Coverage
+  - YearMonth
+  - TemporalExtent
+  - TemporalWindow
 
 validation:
   - validate_ontology
@@ -99,6 +114,14 @@ validation:
   - Accepted
   - Rejected
   - Diagnostic
+
+queries:
+  - covered_months
+  - before
+  - overlaps
+  - select_activities_in_window
+  - GraphView
+  - QueryWitness
 ```
 
 The root API is intentionally small. Internal aliases and implementation helpers remain owned by their modules.
@@ -115,7 +138,7 @@ RealisationCandidate + OntologySchema
 
 Validation covers schema coherence, ontology identity and version, unique record identifiers, known concepts and relations, properties and qualifiers, runtime value kinds, reference closure, endpoint compatibility, and realisation-level cardinality requirements.
 
-The first ontology requires each `Activity` to have at least one incoming `performs` relation and exactly one outgoing `occurs_in` relation. `exposed_to` and `learns` require a context reference qualifier.
+Both executable schemas require each `Activity` to have at least one incoming `performs` relation and exactly one outgoing `occurs_in` relation. `exposed_to` and `learns` require a context reference qualifier. Model v0.5 additionally validates month-level temporal extents and the consistency of direct and transitive `part_of` containment.
 
 ## 6. Test strategy
 
@@ -124,7 +147,7 @@ All tests run through pytest:
 - deterministic unit tests provide small examples and regressions;
 - Hypothesis tests generate cases and search for counterexamples to invariants.
 
-The implemented suite has 19 deterministic cases and 3 generative invariant tests. It checks ontology coherence, valid construction, immutability, guarded construction, invalid concepts and endpoints, activity cardinality, contextual qualifiers, reference kinds, runtime integer typing, dangling endpoints, endpoint-kind compatibility, record-order independence, renderer data preservation, HTML generation, visible context anchoring for contextual relations, context-specific activity organization, concrete activity evidence, and cross-context Python reuse without explicit transfer edges.
+The suite combines deterministic cases with Hypothesis invariants. In addition to the original schema, validation, and visualization behavior, it checks canonical `YearMonth` values, temporal immutability, extent consistency, direct and transitive containment, exact and bounded covered-month results, ongoing observations, temporal ordering, overlap, possible versus unknown matches, witness paths, and `GraphView` closure.
 
 Hypothesis increases confidence in invariants; it is not a formal proof system.
 
@@ -143,6 +166,7 @@ Run the executable guided example with:
 
 ```bash
 uv run python examples/semantic_spine.py
+uv run python -m examples.temporal_queries
 ```
 
 The example constructs a small PhD activity graph, validates it, performs direct reads over the immutable result, and then removes the activity's contextual grounding to demonstrate structured rejection diagnostics.
@@ -175,8 +199,6 @@ The selected element, collapsed properties, focus, and filters are presentation 
 
 ```yaml
 not_created_yet:
-  - retrieval evaluator
-  - GraphView and query result types
   - public graph-pattern language
   - public relational algebra
   - repository abstraction
@@ -192,6 +214,6 @@ No empty packages are created for future features. Structure should appear only 
 
 ## 9. Next executable increment
 
-Implement one typed `ActivitiesInContext` retrieval end to end. It should return useful information rather than a prose answer: bindings, witnesses, coverage, diagnostics, and an immutable, semantically closed `GraphView`.
+The next increment should be chosen from observed use rather than by filling the package map. A strong candidate is adapting the Cytoscape example to consume temporal `GraphView` values and render derived chronology without turning derived results into asserted edges.
 
-That increment should add only the smallest justified retrieval/result surface. It should not introduce a public query language, general optimizer, storage abstraction, or interaction-layer translation.
+That increment should not introduce a public query language, general optimizer, storage abstraction, or narrative interpretation inside the query engine.

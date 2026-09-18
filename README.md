@@ -2,10 +2,7 @@
 
 A typed career-ontology implementation in Python 3.12, managed with `uv`.
 
-The first maintained implementation provides an explicit Model 4 ontology,
-immutable entity and relation records, structured diagnostics, and a validation
-boundary from `RealisationCandidate` to `Accepted(ValidatedRealisation)` or
-`Rejected`. Sources live directly in `caron/`.
+The maintained implementation provides explicit Model 4 and v0.5 ontology schemas, immutable entity and relation records, structured diagnostics, and a validation boundary from `RealisationCandidate` to `Accepted(ValidatedRealisation)` or `Rejected`. The v0.5 slice adds month-level context temporality, derived temporal queries, witnesses, and immutable `GraphView` results. Sources live directly in `caron/`.
 
 ## Getting started
 
@@ -14,6 +11,7 @@ git clone https://github.com/MttBallu/caron.git
 cd caron
 uv sync --locked --all-groups
 uv run python -m examples.semantic_spine
+uv run python -m examples.temporal_queries
 ```
 
 ## Interactive examples
@@ -35,11 +33,13 @@ relations, expand long properties, follow references, and filter entity or
 relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr, so an
 internet connection is required when opening it.
 
-The experimental adapter currently consumes `ValidatedRealisation`. Relations
-with a context qualifier, such as `learns`, are rendered as relation-occurrence
-nodes connected to their source, target, and context so their n-ary meaning is
-not hidden. The adapter lives under `examples/` and will accept `GraphView` once
-retrieval is implemented.
+The experimental adapter currently consumes `ValidatedRealisation`. Relations with a context qualifier, such as `learns`, are rendered as relation-occurrence nodes connected to their source, target, and context so their n-ary meaning is not hidden. Moving this adapter to query-produced `GraphView` values remains a separate interaction-layer change.
+
+The temporal example validates the ALICE, PhD synthetic-data, and `jax-geopro` contexts, derives exact and bounded covered-month results, establishes the contextual ordering of three Python activities, and returns possible matches for a 2022 window:
+
+```bash
+uv run python -m examples.temporal_queries
+```
 
 ## Checks
 
@@ -49,6 +49,7 @@ uv run ruff check .
 uv run mypy caron tests examples
 uv run pytest
 uv run python -m examples.semantic_spine
+uv run python -m examples.temporal_queries
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
 uv build
@@ -59,15 +60,9 @@ The tests include deterministic pytest cases and Hypothesis invariant tests.
 
 ## Scope and next increments
 
-The current model-design priority is the temporal extension for ontology v0.5.
-Its semantics and review are recorded in the
-[temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and the
-[contract review](docs/career-model-v0.5-temporal-contract-review.md). No
-temporal implementation is included yet.
+The temporal extension is specified by the [temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and exercised in the [temporal instantiation experiment](docs/career-model-v0.5-temporal-instantiation-experiment.md). The implemented query surface intentionally remains small: `covered_months`, `before`, `overlaps`, and `select_activities_in_window`.
 
-Retrieval, `GraphView`, serialization, storage, and CLI behavior remain deferred.
-The planned retrieval increment is one typed `ActivitiesInContext` query with
-bindings, witnesses, coverage, diagnostics, and an immutable `GraphView`.
+Serialization, storage, CLI behavior, activity extents, temporal relation qualifiers, and a complete interval algebra remain deferred. The Cytoscape adapter also continues to consume `ValidatedRealisation`; adapting it to query-produced `GraphView` values is a separate interaction-layer increment.
 
 See also the [implementation overview](career-ontology-package-skeleton.md),
 [package boundaries](docs/career-ontology-package-boundaries.md), and

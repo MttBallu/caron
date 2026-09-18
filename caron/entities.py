@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from caron.ontology import ConceptId, PropertyName
+from caron.temporal import TemporalExtent
 
 type EntityId = str
 
@@ -12,7 +13,7 @@ class EntityRef:
     entity_id: EntityId
 
 
-type PropertyValue = str | int | EntityRef
+type PropertyValue = str | int | EntityRef | TemporalExtent
 
 
 @dataclass(frozen=True, slots=True)

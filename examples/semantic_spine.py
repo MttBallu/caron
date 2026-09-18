@@ -13,9 +13,9 @@ At this stage, the package can:
 5. produce an immutable ``ValidatedRealisation`` after successful validation;
 6. support direct reads over that validated value.
 
-It does not yet execute career questions, produce bindings or witnesses, build
-a ``GraphView``, serialize data, or translate results into narrative answers.
-Those responsibilities belong to later query, storage, and interaction layers.
+This Model 4 example stops at direct validated reads. The separate temporal
+example exercises the v0.5 query and ``GraphView`` boundary. Serialization and
+narrative answer construction remain outside both examples.
 """
 
 from dataclasses import replace
@@ -265,8 +265,9 @@ def main() -> None:
     show_direct_reads(validate_example(candidate))
     show_rejection(candidate)
 
-    print("NOT IMPLEMENTED YET")
-    print("  typed retrieval execution, witnesses, GraphView, serialization, CLI")
+    print("THIS MODEL 4 EXAMPLE STOPS AT DIRECT VALIDATED READS")
+    print("  temporal queries and GraphView: examples.temporal_queries")
+    print("  serialization, storage, narrative answers, CLI: deferred")
 
 
 if __name__ == "__main__":

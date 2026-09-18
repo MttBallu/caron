@@ -1,6 +1,6 @@
 ---
 kind: package_boundary_note
-status: accepted_and_implemented_for_semantic_spine
+status: accepted_and_implemented_through_temporal_query_spine
 architecture_contract: 0.2
 ---
 
@@ -28,9 +28,13 @@ decisions:
   global_invariants: declarative RelationRequirement records
   deterministic_tests: pytest
   invariant_tests: hypothesis through pytest
+  temporal_values: immutable month-level value objects
+  temporal_validation: local extent and transitive containment checks
+  temporal_queries: small typed catalogue with explicit result classifications
+  graph_view: immutable query selection retaining ontology, witnesses, and coverage
 ```
 
-## Accepted for the next increment
+## Accepted and implemented retrieval boundary
 
 ```yaml
 retrieval_boundary:
@@ -45,7 +49,6 @@ retrieval_boundary:
 ```yaml
 open_implementation_choices:
   - retrieval indexing strategy
-  - GraphView internal representation
   - adapter and codec APIs
   - CLI framework
 ```

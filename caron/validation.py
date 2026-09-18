@@ -5,12 +5,14 @@ from dataclasses import dataclass
 from caron.diagnostics import Diagnostic, DiagnosticLayer
 from caron.entities import Entity, EntityRef, PropertyValue
 from caron.ontology import (
+    CONTEXT,
     EndpointPosition,
     OntologySchema,
     ValueKind,
 )
 from caron.realisations import RealisationCandidate, ValidatedRealisation
 from caron.relations import QualifierValue, RelationAssertion
+from caron.temporal import KnownEnd, OngoingAsOf, TemporalExtent, UnknownEnd
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +46,8 @@ def _value_matches_kind(value: PropertyValue | QualifierValue, kind: ValueKind) 
             return isinstance(value, int) and not isinstance(value, bool)
         case ValueKind.ENTITY_REFERENCE:
             return isinstance(value, EntityRef)
+        case ValueKind.TEMPORAL_EXTENT:
+            return isinstance(value, TemporalExtent)
 
 
 def validate_ontology(ontology: OntologySchema) -> tuple[Diagnostic, ...]:
@@ -357,6 +361,9 @@ def validate_candidate(
             ontology, candidate.entities, candidate.relations
         )
     )
+    diagnostics.extend(
+        _validate_temporal_containment(candidate.entities, candidate.relations)
+    )
 
     if diagnostics:
         return Rejected(tuple(diagnostics))
@@ -434,7 +441,31 @@ def _validate_entity(
                 field_name=item.name,
             )
         )
+        if isinstance(item.value, TemporalExtent):
+            diagnostics.extend(_validate_temporal_extent(entity.id, item.value))
     return tuple(diagnostics)
+
+
+def _validate_temporal_extent(
+    entity_id: str,
+    extent: TemporalExtent,
+) -> tuple[Diagnostic, ...]:
+    match extent.end:
+        case KnownEnd(month) if month < extent.start:
+            message = "Known temporal end must not be before the start month."
+        case OngoingAsOf(month) if month < extent.start:
+            message = "Ongoing observation must not be before the start month."
+        case KnownEnd() | OngoingAsOf() | UnknownEnd():
+            return ()
+    return (
+        Diagnostic(
+            code="record.invalid_temporal_extent",
+            layer=DiagnosticLayer.LOCAL_RECORD,
+            message=message,
+            record_id=entity_id,
+            field="temporal_extent",
+        ),
+    )
 
 
 def _validate_relation(
@@ -651,3 +682,120 @@ def _validate_relation_requirements(
                     )
                 )
     return tuple(diagnostics)
+
+
+def _validate_temporal_containment(
+    entities: tuple[Entity, ...],
+    relations: tuple[RelationAssertion, ...],
+) -> tuple[Diagnostic, ...]:
+    """Reject context occurrences that cannot fit in dated ancestors."""
+
+    context_by_id = {entity.id: entity for entity in entities if entity.kind == CONTEXT}
+    parent_edges: dict[str, list[tuple[str, str]]] = {}
+    for relation in relations:
+        if relation.kind != "part_of":
+            continue
+        if (
+            relation.source.entity_id not in context_by_id
+            or relation.target.entity_id not in context_by_id
+        ):
+            continue
+        parent_edges.setdefault(relation.source.entity_id, []).append(
+            (relation.target.entity_id, relation.id)
+        )
+
+    diagnostics: list[Diagnostic] = []
+    for child in context_by_id.values():
+        ancestors = _ancestor_paths(child.id, parent_edges)
+        dated_ancestors = tuple(
+            (ancestor_id, relation_path, ancestor_extent)
+            for ancestor_id, relation_path in ancestors
+            if isinstance(
+                ancestor_extent := context_by_id[ancestor_id].property(
+                    "temporal_extent"
+                ),
+                TemporalExtent,
+            )
+        )
+        lower_bound = max(
+            (extent.start for _, _, extent in dated_ancestors),
+            default=None,
+        )
+        upper_bound = min(
+            (
+                extent.end.month
+                for _, _, extent in dated_ancestors
+                if isinstance(extent.end, KnownEnd)
+            ),
+            default=None,
+        )
+        if (
+            lower_bound is not None
+            and upper_bound is not None
+            and lower_bound > upper_bound
+        ):
+            diagnostics.append(
+                Diagnostic(
+                    code="realisation.temporal_containment_impossible",
+                    layer=DiagnosticLayer.REALISATION,
+                    message=(
+                        f"Dated ancestors of context {child.id!r} have no common "
+                        "month in which its nonempty occurrence can fit."
+                    ),
+                    record_id=child.id,
+                    field="temporal_extent",
+                )
+            )
+            continue
+
+        child_extent = child.property("temporal_extent")
+        if not isinstance(child_extent, TemporalExtent):
+            continue
+        for ancestor_id, relation_path, ancestor_extent in dated_ancestors:
+            if _can_be_contained(child_extent, ancestor_extent):
+                continue
+            diagnostics.append(
+                Diagnostic(
+                    code="realisation.temporal_containment_impossible",
+                    layer=DiagnosticLayer.REALISATION,
+                    message=(
+                        f"Context {child.id!r} cannot occur within dated ancestor "
+                        f"{ancestor_id!r} along relations {relation_path!r}."
+                    ),
+                    record_id=child.id,
+                    field="temporal_extent",
+                )
+            )
+    return tuple(diagnostics)
+
+
+def _ancestor_paths(
+    child_id: str,
+    parent_edges: dict[str, list[tuple[str, str]]],
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    discovered: list[tuple[str, tuple[str, ...]]] = []
+    pending: list[tuple[str, tuple[str, ...]]] = [(child_id, ())]
+    visited = {child_id}
+    while pending:
+        current_id, path = pending.pop()
+        for parent_id, relation_id in parent_edges.get(current_id, []):
+            if parent_id in visited:
+                continue
+            visited.add(parent_id)
+            parent_path = (*path, relation_id)
+            discovered.append((parent_id, parent_path))
+            pending.append((parent_id, parent_path))
+    return tuple(discovered)
+
+
+def _can_be_contained(child: TemporalExtent, parent: TemporalExtent) -> bool:
+    if child.start < parent.start:
+        return False
+    if not isinstance(parent.end, KnownEnd):
+        return True
+    match child.end:
+        case KnownEnd(month) | OngoingAsOf(month):
+            child_minimum_end = month
+        case UnknownEnd():
+            child_minimum_end = child.start
+    return child_minimum_end <= parent.end.month

@@ -15,6 +15,7 @@ class ValueKind(StrEnum):
     TEXT = "text"
     INTEGER = "integer"
     ENTITY_REFERENCE = "entity_reference"
+    TEMPORAL_EXTENT = "temporal_extent"
 
 
 class EndpointPosition(StrEnum):
@@ -232,4 +233,26 @@ def model4_ontology() -> OntologySchema:
         concepts=concepts,
         relations=relations,
         requirements=requirements,
+    )
+
+
+def model_v0_5_ontology() -> OntologySchema:
+    """Return career model v0.5 with month-level context temporality."""
+
+    predecessor = model4_ontology()
+    concepts = tuple(
+        _labelled(
+            CONTEXT,
+            PropertyDefinition("temporal_extent", ValueKind.TEMPORAL_EXTENT),
+        )
+        if concept.id == CONTEXT
+        else concept
+        for concept in predecessor.concepts
+    )
+    return OntologySchema(
+        id=predecessor.id,
+        version="0.5",
+        concepts=concepts,
+        relations=predecessor.relations,
+        requirements=predecessor.requirements,
     )

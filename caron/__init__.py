@@ -22,6 +22,19 @@ from caron.ontology import (
     RelationRequirement,
     ValueKind,
     model4_ontology,
+    model_v0_5_ontology,
+)
+from caron.queries import (
+    CoveredMonthKind,
+    CoveredMonthResult,
+    TemporalClassification,
+    TemporalMatch,
+    TemporalMatchMode,
+    TemporalPredicateResult,
+    before,
+    covered_months,
+    overlaps,
+    select_activities_in_window,
 )
 from caron.realisations import (
     Coverage,
@@ -30,6 +43,15 @@ from caron.realisations import (
     ValidatedRealisation,
 )
 from caron.relations import Qualifier, RelationAssertion
+from caron.temporal import (
+    KnownEnd,
+    OngoingAsOf,
+    TemporalEnd,
+    TemporalExtent,
+    TemporalWindow,
+    UnknownEnd,
+    YearMonth,
+)
 from caron.validation import (
     Accepted,
     Rejected,
@@ -37,6 +59,7 @@ from caron.validation import (
     validate_candidate,
     validate_ontology,
 )
+from caron.views import GraphView, QueryBinding, QueryWitness
 
 __all__ = [
     "ACTIVITY",
@@ -51,6 +74,8 @@ __all__ = [
     "TECHNOLOGY",
     "Accepted",
     "ConceptDefinition",
+    "CoveredMonthKind",
+    "CoveredMonthResult",
     "Coverage",
     "CoverageStatus",
     "Diagnostic",
@@ -58,21 +83,40 @@ __all__ = [
     "EndpointPosition",
     "Entity",
     "EntityRef",
+    "GraphView",
+    "KnownEnd",
     "OntologySchema",
+    "OngoingAsOf",
     "Property",
     "PropertyDefinition",
     "Qualifier",
     "QualifierDefinition",
+    "QueryBinding",
+    "QueryWitness",
     "RealisationCandidate",
     "Rejected",
     "RelationAssertion",
     "RelationDefinition",
     "RelationRequirement",
     "Severity",
+    "TemporalClassification",
+    "TemporalEnd",
+    "TemporalExtent",
+    "TemporalMatch",
+    "TemporalMatchMode",
+    "TemporalPredicateResult",
+    "TemporalWindow",
+    "UnknownEnd",
     "ValidatedRealisation",
     "ValidationResult",
     "ValueKind",
+    "YearMonth",
+    "before",
+    "covered_months",
     "model4_ontology",
+    "model_v0_5_ontology",
+    "overlaps",
+    "select_activities_in_window",
     "validate_candidate",
     "validate_ontology",
 ]

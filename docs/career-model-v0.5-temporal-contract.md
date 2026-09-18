@@ -1,7 +1,7 @@
 ---
 kind: model_extension_contract
-status: reviewed
-contract_version: "0.1"
+status: accepted
+contract_version: "0.2"
 target_ontology_id: caron.career-model
 target_ontology_version: "0.5"
 predecessor_ontology_version: "4"
@@ -14,408 +14,408 @@ scope: context_temporality
 
 Model v0.5 adds a minimal temporal dimension to career realisations.
 
-The extension must support useful chronological selection and comparison without
-inventing precision, treating presentation order as semantic order, or creating
-a second relation system inside entities.
+The extension must support useful chronological selection, comparison, and presentation without inventing precision, treating presentation order as semantic order, or introducing a second relation system inside entities.
 
-The first temporal carrier is `Context`. Activities obtain temporal
-constraints through `occurs_in`; they do not acquire the full duration of
-their context.
+The first explicit temporal carrier is `Context`. Activities receive temporal constraints through `occurs_in`; they do not acquire the full temporal extent of their context.
 
-This contract specifies model semantics and the observable obligations of
-queries. It does not prescribe Python classes, serialization syntax, indexes,
-CLI commands, or visualization layout.
+This contract specifies model semantics and the observable obligations of validation and queries. It does not prescribe Python classes, serialization syntax, indexes, CLI commands, or visualization layout.
 
 ## 2. Decisions
 
 Model v0.5 makes the following decisions:
 
-1. A `Context` may have one optional `temporal_extent`.
-2. `temporal_extent` is one typed value, not three independent `start`,
-   `end`, and `status` properties.
-3. A temporal extent describes one connected period.
-4. Calendar precision is preserved at year, month, or day granularity.
-5. Partial dates constrain a boundary; they are not expanded into falsely exact
-   asserted dates.
-6. A known end, an unknown end, and an ongoing observation are distinct states.
-7. Duration and temporal relations are derived by the query engine.
-8. Derived temporal relations are not persisted as ontology assertions.
-9. `occurs_in` constrains an activity to its context without assigning the
-   context's duration to the activity.
-10. Temporal presentation remains an interaction-layer concern.
+1. Every `Context` and `Activity` has a nonempty temporal occurrence, whether or not its boundaries are known.
+2. A `Context` may assert zero or one optional `temporal_extent`.
+3. `temporal_extent` is one typed value, not a collection of independent `start`, `end`, and `status` properties.
+4. A temporal extent describes one connected calendar envelope.
+5. A calendar envelope does not assert continuous activity, constant intensity, or effort throughout the represented period.
+6. Calendar values use month-level precision and the canonical `YYYY-MM` representation.
+7. A known end, an unknown end, and an ongoing observation are distinct states.
+8. Relations such as `part_of` and `occurs_in` constrain temporal occurrences without copying temporal extents between entities.
+9. Temporal relations and covered-month results are derived by the query engine.
+10. Derived temporal information is not persisted as ontology assertions.
+11. Temporal presentation remains an interaction-layer responsibility.
 
 ## 3. Architectural boundary
 
 | Layer | Responsibility |
 |---|---|
-| Ontology model | Define the temporal value, where it may occur, and the constraints it entails |
-| Realisation | Assert known temporal facts while preserving their precision |
+| Ontology model | Define temporal values, where they may occur, and the constraints they entail |
+| Realisation | Assert known temporal facts without inventing missing months |
 | Validation | Reject contradictions and report incomplete or indeterminate temporal information |
-| Query engine | Derive comparisons, duration ranges, selections, bindings, and witnesses |
-| `GraphView` | Carry the selected asserted facts and the evidence for temporal query results |
+| Query engine | Derive comparisons, temporal selections, covered-month results, bindings, and witnesses |
+| `GraphView` | Carry selected asserted facts and the evidence for temporal query results |
 | Interaction layer | Choose timelines, ordering, labels, prose, and visual layout |
 
-A renderer may sort contexts by a temporal key, but that display order is not an
-asserted `before` relation.
+A renderer may sort contexts by a temporal key, but that display order is not an asserted `before` relation.
 
 ## 4. Temporal domain
 
-### 4.1 Calendar domain
+### 4.1 `YearMonth`
 
-The first temporal domain is the proleptic Gregorian calendar at day
-granularity. Time of day and time zones are outside v0.5.
+The temporal value used by model v0.5 is `YearMonth`.
 
-A temporal boundary contains:
+A `YearMonth` identifies one calendar month in the proleptic Gregorian calendar and is serialized canonically as `YYYY-MM`.
 
-- a calendar value;
-- a precision: `year`, `month`, or `day`.
+Examples include `2021-11`, `2022-02`, and `2025-10`.
 
-The boundary denotes the set of days compatible with the asserted value:
+The month component must be between `01` and `12`. Year-only values, day-level values, time-of-day values, and time zones are outside v0.5.
 
-| Boundary | Compatible days |
-|---|---|
-| `2022` | Any day in calendar year 2022 |
-| `2022-06` | Any day in June 2022 |
-| `2022-06-15` | The single day 15 June 2022 |
+A value such as `2022` must not be interpreted as either `2022-01` or `2022-12`. If the source does not establish a month, the realisation must omit the temporal boundary or report incomplete source information rather than inventing one.
 
-Consequently, the model does not silently interpret `2022` as either
-1 January or 31 December. Queries reason over all compatible days.
+The ordering of `YearMonth` values is their ordinary chronological ordering.
 
-Precision and uncertainty are not the same concept. Model v0.5 supports
-incomplete calendar precision. Expressions such as "approximately June 2022"
-or probability distributions over dates remain outside scope.
+### 4.2 Temporal occurrence
 
-### 4.2 Temporal extent
+Every `Context` and `Activity` is understood to have some nonempty temporal occurrence.
 
-A temporal extent contains:
+This occurrence exists as part of the semantics of the entity. Its boundaries do not need to be explicitly known or stored.
 
-- one required start boundary;
-- exactly one end state.
+An absent `temporal_extent` means that the realisation does not assert intrinsic boundaries for the entity. It does not mean that the entity is timeless, instantaneous, or current.
+
+Relations may constrain an otherwise undated occurrence. For example, an undated child context may be constrained to occur within a dated parent context.
+
+### 4.3 Temporal extent
+
+A temporal extent is an asserted calendar envelope containing one required start month and exactly one end state.
 
 The end state is one of:
 
-- **known end** — an end boundary is asserted;
-- **unknown end** — no end and no continuing status are known;
-- **ongoing as of** — the context is asserted to be continuing on a recorded,
-  exact observation day.
+- **known end** — an end month is asserted;
+- **unknown end** — no end month and no continuing observation are known;
+- **ongoing as of** — the context is asserted to be continuing during a recorded observation month.
 
-An extent denotes the set of continuous, inclusive day intervals compatible
-with its boundaries and end state.
+A known-end extent includes both its start and end months.
 
-For a known end, a valid interpretation chooses a start day from the start
-boundary and an end day from the end boundary such that the start is not after
-the end.
+```yaml
+temporal_extent:
+  start: 2021-11
+  end:
+    known: 2022-02
+```
 
-For an unknown end, the context is known to have started, but the available
-facts do not establish when it ended or whether it continues.
+This example represents the calendar envelope containing November 2021, December 2021, January 2022, and February 2022.
 
-For an ongoing observation, `ongoing_as_of` records the day on which the
-context was known to be active. It entails that the context did not end before
-that day. It does not assert that the context remains active forever, and its
-meaning must not move forward with the system clock.
+The envelope does not assert that activity occurred continuously during every represented month. It establishes temporal location and coverage, not workload or intensity.
 
-An ongoing observation therefore carries its own `as_of` day. A query run
-later may report that the observation is stale; it may not extend the assertion
-without new evidence.
+For an unknown end, the context is known to have started, but the available facts do not establish when it ended or whether it continues.
 
-### 4.3 Why duration is not stored
+For an ongoing observation, `ongoing_as_of` records the month during which the context was known to continue. It entails that the context did not end before that month. It does not assert that the context continues indefinitely.
 
-Duration is a result of an extent, not an independent fact in the first model.
+```yaml
+temporal_extent:
+  start: 2026-04
+  end:
+    ongoing_as_of: 2026-09
+```
 
-When both boundaries identify exact days, an exact elapsed duration can be
-derived. With coarse boundaries, the query engine derives a range of possible
-durations. For an ongoing context, it may derive duration-so-far as of the
-recorded observation day. For an unknown end, a useful duration may be
-indeterminate.
+The meaning of an ongoing observation must not advance with the system clock. A later query may report that the observation is stale, but it may not extend the assertion without new evidence.
 
-Storing both extent and duration would introduce redundant values that could
-disagree.
+### 4.4 Connected envelopes
+
+One temporal extent represents one connected calendar envelope.
+
+If the same named undertaking has two genuinely disjoint periods and the gap matters to the questions being asked, the preferred modelling choice is to represent two related contexts.
+
+A future union-of-intervals value may be introduced only if concrete cases show that separate contexts distort the identity of the undertaking.
 
 ## 5. Attachment to `Context`
 
 A `Context` may carry zero or one `temporal_extent`.
 
-Absence of the property means that the realisation makes no intrinsic boundary
-assertion about that context. It does not mean timeless, instantaneous, or
-current. Relations such as `part_of` may still constrain its possible time.
+The temporal extent is an intrinsic property of the context because it describes the calendar envelope of that context itself.
 
-One extent represents one connected period. If the same named undertaking has
-two genuinely disjoint periods, the first modelling choice is two related
-contexts. A future union-of-intervals value may be introduced only if concrete
-cases show that separate contexts distort identity.
+It is not a qualification of `part_of`, `participates_in`, or another relation. A period describing only a person’s participation in a longer context would instead qualify the participation relation and remains outside v0.5.
 
-The existing free-text `status` property has no temporal semantics in v0.5.
-It must not be used to infer that a context is ongoing or complete. If retained
-for another purpose, that purpose requires a separate definition.
+The existing free-text `status` property has no temporal semantics in v0.5. It must not be used to infer that a context is ongoing or complete.
 
 ## 6. Semantics of existing relations
 
 ### 6.1 `part_of`
 
-If `part_of(child, parent)` is asserted, the child's temporal extent is
-constrained to lie within the parent's temporal extent whenever both are
-present.
+If `part_of(child, parent)` is asserted, the temporal occurrence of the child is contained in the temporal occurrence of the parent:
 
-Because boundaries may be coarse or incomplete, the assertion acts as a
-constraint on valid interpretations:
+$$
+time(child) \subseteq time(parent)
+$$
 
-- reject the candidate if no interpretation can satisfy temporal containment;
-- otherwise retain only interpretations in which the child is contained in the
-  parent.
+When both contexts have asserted temporal extents, the child’s envelope must fit within the parent’s envelope.
 
-The relation itself therefore entails containment. Coarse boundaries may leave
-the exact child and parent dates indeterminate, but interpretations that violate
-`part_of` are not valid interpretations of the complete realisation.
+A candidate is invalid if the asserted extents make containment impossible.
 
-The relation does not manufacture intrinsic boundary values. An undated child
-of a dated parent remains without its own asserted extent, although
-`part_of` bounds its possible time and supplies a query witness.
+The relation does not manufacture intrinsic boundary values. An undated child of a dated parent remains without its own asserted `temporal_extent`, although its possible occurrence is bounded by the parent and that constraint may support query results.
+
+Nested `part_of` relations constrain time transitively.
 
 ### 6.2 `occurs_in`
 
-For:
+If `occurs_in(activity, context)` is asserted, the temporal occurrence of the activity is contained in the temporal occurrence of the context:
 
 $$
-occurs\_in(a, c)
+time(activity) \subseteq time(context)
 $$
 
-the activity has some occurrence interval contained in the context:
+This does not entail:
 
 $$
-time(a) \subseteq extent(c)
+time(activity) = time(context)
 $$
 
-This is a constraint, not an assertion that:
+Model v0.5 does not add a direct `temporal_extent` property to `Activity`. The exact date and duration of an activity may therefore remain unknown even when its context is dated.
 
-$$
-time(a) = extent(c)
-$$
-
-Model v0.5 does not add a direct temporal-extent property to `Activity`.
-Therefore, the exact date and duration of an activity may remain unknown even
-when its context is dated.
-
-If the context has no temporal extent, `occurs_in` supplies no concrete date.
+If the immediate context is undated but is transitively contained in a dated parent context, the parent may still provide useful temporal bounds for the activity.
 
 ### 6.3 `participates_in`
 
-`participates_in(person, context)` asserts participation in the context. It
-does not assert that the person participated throughout the context's full
-extent.
+`participates_in(person, context)` asserts participation in the context. It does not assert that the person participated throughout the context’s full temporal extent.
 
-Temporal qualification of participation is deferred. Chronology does not make
-`performs` derivable from `participates_in` and `occurs_in`.
+Temporal qualification of participation is deferred.
 
-### 6.4 Other relations
+Chronology does not make `performs` derivable from `participates_in` and `occurs_in`. A person may participate in a context without performing every activity that occurs within it.
 
-Relations such as `uses`, `takes_input`, `draws_on`, and `produces`
-receive temporal relevance through their activity and its `occurs_in`
-witness. They do not gain independent timestamps in v0.5.
+### 6.4 Activity-related relations
 
-This permits queries such as "technologies used in contexts overlapping 2024"
-without claiming that each technology was used throughout every matching
-context.
+Relations such as `uses`, `takes_input`, `draws_on`, and `produces` receive temporal relevance through their source activity and the activity’s `occurs_in` witness.
 
-## 7. Validation obligations
+They do not receive independent timestamps in v0.5.
 
-A v0.5 validator must enforce or diagnose the following rules.
+This supports queries such as “technologies used in contexts overlapping 2024” without asserting that a technology was used throughout every matching context.
 
-### 7.1 Local value rules
+## 7. Covered-month results
 
-1. Every calendar value is valid for its declared precision.
-2. A temporal extent has one start and exactly one end state.
-3. A known-end extent has at least one compatible interval with
-   `start <= end`.
-4. An ongoing observation contains an exact `as_of` day and has at least one
-   compatible start day not after that observation.
+A stored duration is not part of the v0.5 model.
+
+For a known-end extent, the query engine derives an inclusive `covered_month_count`:
+
+```text
+covered_month_count = end_month_index - start_month_index + 1
+```
+
+For an ongoing context, the query engine derives `covered_month_count_as_of` using the recorded observation month.
+
+For a context with an unknown end, no final covered-month count can be derived.
+
+For an undated child temporally contained in a dated parent, the parent does not supply an exact count. The query engine may instead derive bounds when they are useful. A nonempty child contained in a 37-month parent has a possible covered-month count from 1 through 37 months.
+
+| Temporal information | Derived result |
+|---|---|
+| Known start and known end | Exact `covered_month_count` |
+| Known start and `ongoing_as_of` | Exact `covered_month_count_as_of` tied to the observation month |
+| Known start and unknown end | Indeterminate final count |
+| Undated nonempty child inside a closed parent | Bounded possible count, not an exact count |
+| No usable temporal bound | Unknown count |
+
+A covered-month result describes the size of a calendar envelope at model resolution. It is not a measure of continuous work, effort, or active time.
+
+Human expressions such as “three years” are interaction-layer renderings and must not change the model-level value or imply uninterrupted activity.
+
+## 8. Validation obligations
+
+### 8.1 Local value rules
+
+A v0.5 validator must enforce the following rules:
+
+1. Every temporal value is a canonical, valid `YearMonth`.
+2. A temporal extent has one start month and exactly one end state.
+3. A known-end extent satisfies `start <= end`.
+4. An ongoing extent satisfies `start <= ongoing_as_of`.
 5. An unknown end is not treated as an ongoing observation.
 6. A context has at most one temporal extent.
-7. A stored duration is not part of the v0.5 temporal contract.
+7. A stored duration or covered-month result is not part of the v0.5 model.
+8. Year-only or day-level boundaries are not valid v0.5 temporal values.
 
-### 7.2 Graph-level rules
+### 8.2 Graph-level rules
 
-1. Temporal constraints introduced by `part_of` must have at least one
-   consistent interpretation.
-2. Nested `part_of` constraints are considered transitively when checking for
-   contradictions.
+A v0.5 validator must enforce or diagnose the following rules:
+
+1. Temporal constraints introduced by `part_of` must admit at least one consistent interpretation.
+2. Nested `part_of` constraints must be considered transitively.
 3. `occurs_in` must not copy a temporal extent onto an activity.
-4. A missing temporal extent is incomplete information, not invalidity.
-5. Career time is distinct from provenance time such as import, creation, or
-   revision timestamps.
+4. Missing intrinsic boundaries are incomplete information, not invalidity.
+5. Career time must remain distinct from provenance time such as import, creation, or revision timestamps.
 
-Validation should distinguish:
+Validation distinguishes:
 
 - **invalid** — the asserted facts have no consistent interpretation;
-- **indeterminate** — multiple interpretations remain;
-- **incomplete** — information useful to a query is absent.
+- **indeterminate** — the asserted constraints admit multiple relevant interpretations;
+- **incomplete** — information useful to an operation is absent.
 
-Only invalidity necessarily prevents construction of a
-`ValidatedRealisation`. Whether indeterminate or incomplete conditions emit
-diagnostics depends on the operation and requested coverage.
+Only invalidity necessarily prevents construction of a `ValidatedRealisation`. Indeterminate or incomplete conditions may produce diagnostics depending on the requested operation.
 
-## 8. Query semantics
+## 9. Query semantics
 
-### 8.1 Entailed and possible answers
+### 9.1 Temporal result classification
 
-Temporal predicates are evaluated over all valid interpretations of the
-asserted temporal facts.
+A temporal predicate produces one of four observable classifications:
 
-A result may be:
+- **entailed** — the predicate holds under every valid interpretation supported by the realisation;
+- **possible** — available temporal constraints provide a witness for the predicate in some valid interpretations but not all;
+- **excluded** — the predicate holds under no valid interpretation;
+- **unknown** — the realisation does not provide enough temporal constraint to evaluate the predicate usefully.
 
-- **entailed** — true in every valid interpretation;
-- **possible** — true in at least one valid interpretation but not all;
-- **excluded** — true in no valid interpretation.
+`possible` is reserved for bounded indeterminacy supported by temporal evidence. A completely undated and unconstrained context is classified as `unknown`, rather than being returned as a possible match for every temporal window.
 
-For example:
+The query engine must not collapse `possible` or `unknown` into `entailed`.
 
-- `definitely_before(A, B)` holds only when every valid interpretation places
-  A before B;
-- `possibly_before(A, B)` holds when at least one interpretation does;
-- overlap and containment follow the same distinction.
+### 9.2 Temporal ordering
 
-The query engine must not collapse `possible` into `entailed`.
+For two known closed extents, `before(A, B)` is entailed when `end(A) < start(B)`.
 
-### 8.2 Window selection
+Because both endpoint months are included, two extents that contain the same calendar month are not strictly ordered at model resolution.
 
-Temporal selection supports an explicit match mode:
+The query engine may derive a strict partial order from entailed `before` results.
 
-- **definite** — include only results entailed to match the window;
-- **possible** — include results with at least one matching interpretation.
+Overlapping, possibly ordered, or unknown contexts remain unordered by that strict partial order.
 
-The result must expose which mode was used.
+A query may additionally return a deterministic display key, but the result must identify it as presentation support rather than temporal evidence.
 
-For an activity without its own extent:
+### 9.3 Window selection
 
-- if its dated context is wholly constrained inside the query window, the
-  activity is definitely situated within the window;
-- if its context only partly overlaps the window, the activity is a possible
-  match;
-- if the context is definitely disjoint, the activity is excluded;
-- if the context is undated, the temporal match is unknown rather than false.
+A temporal window is itself an inclusive pair of `YearMonth` values.
 
-### 8.3 Ordering
+Window selection supports at least two match modes:
 
-The query engine may derive a strict partial order from entailed `before`
-comparisons.
+- **definite** — return only entities whose match is entailed;
+- **possible** — return entities whose match is entailed or possible.
 
-Overlapping or temporally indeterminate contexts remain unordered by that
-semantic relation. A query may additionally return a deterministic display key,
-but it must identify that key as presentation support rather than temporal
-evidence.
+Unknown results are not included by default. An operation may expose an explicit `include_unknown` option when the interaction layer needs to show missing temporal coverage.
 
-### 8.4 Duration
+The result must expose the selected mode and the classification of each returned match.
 
-Duration queries return:
+For an activity without its own temporal extent:
 
-- an exact duration when entailed;
-- a bounded range when coarse boundaries permit it;
-- duration-so-far tied to a recorded ongoing observation;
-- an indeterminate result when no useful bound follows.
+- if its constraining context is wholly contained within the query window, the activity is an entailed match;
+- if its constraining context partly overlaps the window, the activity may be a possible match;
+- if its constraining context is definitely disjoint from the window, the activity is excluded;
+- if no usable temporal constraint is available, the activity’s match is unknown.
 
-Human forms such as "three years" are interaction-layer renderings of those
-results.
+The constraining context may be reached through `occurs_in` followed by one or more `part_of` relations.
 
-### 8.5 Witnesses
+### 9.4 Derived temporal relations
+
+Relations such as `before`, `overlaps`, and `contained_in_window` are query results, not asserted ontology facts.
+
+The first implementation does not need to expose a complete interval algebra. It only needs the temporal predicates justified by concrete competency questions.
+
+### 9.5 Witnesses
 
 Every derived temporal result must retain a witness sufficient to explain it.
 
-An activity selected through its context includes at least:
+An activity selected through its immediate context includes at least the activity, its `occurs_in` assertion, the context, the asserted temporal extent used as evidence, the temporal operation, and the result classification.
 
-- the activity;
-- its `occurs_in` assertion;
-- the context;
-- the asserted temporal extent;
-- the temporal operation and match classification.
+When a dated ancestor context supplies the bound, the witness additionally includes the relevant `part_of` path.
 
-A technology selected through an activity additionally retains the relevant
-`uses` assertion. This makes uncertainty and inference paths inspectable.
+A technology selected through an activity additionally includes the relevant `uses` assertion.
 
-## 9. `GraphView` consequences
+This makes inference paths, missing information, and uncertainty inspectable.
 
-A temporal query may return an immutable `GraphView` containing the selected
-entities and assertions together with query bindings, witnesses, coverage, and
-diagnostics.
+## 10. `GraphView` consequences
 
-The view must not insert `before`, `overlaps`, or duration as though they
-were asserted career facts. Derived results belong to query metadata or an
-explicit derived-result structure.
+A temporal query may return an immutable `GraphView` containing selected entities and assertions together with query bindings, witnesses, coverage information, and diagnostics.
 
-A renderer may use the metadata to produce:
+The view must not insert `before`, `overlaps`, or covered-month results as though they were asserted career facts.
 
-- a timeline;
-- chronological grouping;
-- an activity-centred flow;
-- temporal filters;
-- warnings for possible or stale results.
+Derived temporal results belong to query metadata or an explicit derived-result structure.
 
-Those representations remain replaceable interaction-layer choices.
+A renderer may use this metadata to produce a timeline, chronological grouping, an activity-centred flow, temporal filters, or warnings for possible, unknown, or stale results.
 
-## 10. Required model scenarios
+These representations remain replaceable interaction-layer choices.
+
+## 11. Reference instantiation
+
+```yaml
+contexts:
+  alice_project:
+    temporal_extent:
+      start: 2021-11
+      end:
+        known: 2022-02
+
+  phd:
+    temporal_extent:
+      start: 2022-10
+      end:
+        known: 2025-10
+
+  synthetic_data_work:
+    part_of: phd
+```
+
+The reference instantiation entails `before(alice_project, phd)` and excludes `overlaps(alice_project, phd)`.
+
+An activity occurring in `synthetic_data_work` is temporally constrained through `activity → occurs_in → synthetic_data_work → part_of → phd`.
+
+Consequently, an activity occurring in the ALICE project is entailed to precede an activity occurring in the synthetic-data context, even though the synthetic-data context has no intrinsic temporal extent.
+
+The witness for that conclusion must include both activities, both contexts, the `occurs_in` assertions, the `part_of` assertion, and the two asserted temporal extents that establish the ordering.
+
+## 12. Required model scenarios
 
 The contract must be tested against at least these semantic scenarios:
 
-1. Two closed contexts with exact, non-overlapping dates are definitely ordered.
-2. Two coarse contexts may be possibly ordered without being definitely
-   ordered.
-3. An ongoing context records the day on which continuation was observed and
-   does not advance automatically.
-4. A context with unknown end is not presented as ongoing.
-5. A dated child context that cannot fit within its dated parent is invalid.
-6. Coarse child and parent dates with at least one containing interpretation
-   remain valid; `part_of` removes non-containing interpretations while exact
-   dates may remain indeterminate.
-7. An activity in a dated context receives a temporal constraint but not the
-   context's duration.
-8. An activity whose context partly overlaps a window is a possible rather than
-   definite match.
-9. An undated context remains queryable non-temporally.
-10. Temporal facts and provenance timestamps can coexist without being
-    confused.
+1. The ALICE project from `2021-11` through `2022-02` is definitely before the PhD from `2022-10` through `2025-10`.
+2. The ALICE project has an exact `covered_month_count` of 4 and the PhD has an exact count of 37.
+3. An undated synthetic-data context contained in the PhD does not inherit the PhD’s exact count; its possible count is bounded from 1 through 37 months.
+4. Two contexts containing the same month are not strictly ordered at month resolution.
+5. A known-end extent with an end before its start is invalid.
+6. An ongoing context records the month in which continuation was observed and does not advance automatically.
+7. A context with an unknown end is not presented as ongoing.
+8. A dated child context that cannot fit within its dated parent is invalid.
+9. An undated child context is temporally bounded by its dated parent without receiving copied intrinsic boundaries.
+10. An activity in a dated context receives a temporal constraint but not the context’s complete extent or covered-month count.
+11. An activity constrained through an undated child and a dated ancestor retains the complete `occurs_in` and `part_of` witness path.
+12. An activity whose constraining context partly overlaps a window is a possible rather than entailed match.
+13. A temporally unconstrained context produces an unknown temporal result rather than a false result.
+14. Temporal facts and provenance timestamps coexist without being confused.
 
-## 11. Versioning and migration
+## 13. Versioning and migration
 
-The target ontology identifier remains `caron.career-model`; the new exact
-version identifier is `0.5`.
+The ontology identifier remains `caron.career-model`. The new exact version identifier is `0.5`.
 
-The executable predecessor currently identifies itself with the legacy version
-string `4`. Version strings are exact schema identifiers, not numbers to be
-compared arithmetically. The predecessor remains a distinct schema; a v0.5
-candidate must not be validated silently against it.
+The executable predecessor currently identifies itself with the legacy version string `4`. Version strings are exact schema identifiers and are not compared arithmetically.
 
-The change is not data-compatible for contexts using independent `start`,
-`end`, or temporal `status` properties. Migration must be explicit:
+A v0.5 candidate must not be validated silently against the predecessor schema.
 
-- an integer `start` or `end` may become a year-precision boundary;
-- a known pair may become a known-end extent if it is consistent;
-- free-text `status` must not be converted to an ongoing observation unless a
-  dated source supports an `as_of` assertion;
-- ambiguous data produces a migration diagnostic rather than an invented date.
+The change is not data-compatible for contexts using independent `start`, `end`, or temporal `status` properties.
 
-Existing validated v4 realisations remain v4 realisations. Validation does not
-retroactively change their meaning.
+Migration must be explicit:
 
-## 12. Deferred concerns
+- an existing canonical month value may become a v0.5 `YearMonth`;
+- a known pair of month values may become a known-end extent if it is consistent;
+- a year-only value must not be assigned an invented month;
+- a free-text status must not be converted to an ongoing observation unless a dated source supports an `ongoing_as_of` month;
+- ambiguous or insufficient source data produces a migration diagnostic.
 
-The following are outside v0.5:
+Existing validated v4 realisations remain v4 realisations. Validation does not retroactively change their meaning.
+
+## 14. Deferred concerns
+
+The following remain outside v0.5:
 
 - direct temporal extents on activities;
 - temporal qualifiers on relations;
+- participation periods;
 - recurring or disconnected extents in one value;
+- year-only, day-level, time-of-day, or time-zone values;
 - approximate, fuzzy, or probabilistic dates;
-- time of day and time zones;
-- a complete implementation of Allen's interval algebra;
+- active-effort or workload duration;
+- a complete implementation of interval algebra;
 - persistence and serialization formats;
 - timeline-specific `GraphView` fields;
 - reconsideration of `performs`.
 
-## 13. Acceptance criteria
+## 15. Acceptance criteria
 
 The contract is ready for implementation when:
 
 1. all required scenarios have deterministic examples;
-2. generators can exercise valid and invalid temporal values;
-3. no query treats coarse precision as exact;
-4. no query advances an ongoing observation using the wall clock;
-5. activity temporal results retain their `occurs_in` witness;
-6. v4 and v0.5 candidates cannot be confused at validation;
-7. the interaction layer can render chronology without adding model assertions.
+2. generators can exercise valid and invalid `YearMonth` values and temporal extents;
+3. no operation invents a month from a year-only source;
+4. no operation interprets a calendar envelope as continuous effort;
+5. no query advances an ongoing observation using the wall clock;
+6. temporal query results distinguish entailed, possible, excluded, and unknown;
+7. exact and bounded covered-month results remain distinguishable;
+8. activity temporal results retain their complete `occurs_in` and `part_of` witness paths;
+9. derived temporal relations and covered-month results remain separate from asserted ontology facts;
+10. v4 and v0.5 candidates cannot be confused during validation;
+11. the interaction layer can render chronology without adding model assertions.

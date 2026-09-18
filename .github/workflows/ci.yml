@@ -34,6 +34,8 @@ jobs:
         run: uv run pytest
       - name: Run semantic example
         run: uv run python -m examples.semantic_spine
+      - name: Run temporal query example
+        run: uv run python -m examples.temporal_queries
       - name: Generate example viewers
         run: |
           uv run python -m examples.cytoscape_html --output /tmp/career_graph.html
