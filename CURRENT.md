@@ -2,13 +2,13 @@
 
 This file is the authority map for the maintained `caron` project. It records
 what is current, what is historical evidence, and which decisions remain open.
-The M0 baseline is the Git revision tagged `m0-baseline`.
+The M0 baseline is the Git revision containing this record on `main`.
 
 ## Version ledger
 
 | Concern | Current identifier | Meaning |
 |---|---|---|
-| Source baseline | Git tag `m0-baseline` | Reproducible M0 semantic, query, temporal, and viewer source tree |
+| Source baseline | This `CURRENT.md` status and its containing Git commit | Reproducible M0 semantic, query, temporal, and viewer source tree |
 | Python distribution | `caron` `0.1.0` | Package release identifier; not an ontology version |
 | Architecture contract | `0.2` | Implemented package-boundary decisions |
 | Ontology identity | `caron.career-model` | Stable ontology-family identifier |
@@ -80,7 +80,7 @@ gate generates it in a temporary directory from the same checked-out sources.
 |---|---|
 | One authoritative source tree | Semantic spine, internal algebra, temporal queries, `GraphView`, and viewer live in this repository |
 | One test command | `uv run --locked --all-groups python tools/verify.py` |
-| One current version record | This file plus Git tag `m0-baseline` |
+| One current version record | This file and its containing Git commit |
 | Accepted regressions pass | Current unit/invariant suite includes ported query-algebra cases and is run by the gate |
 | Latest viewer comes from the same tree | The gate regenerates complete, two-context, and temporal-window viewers |
 
