@@ -35,6 +35,7 @@ from caron.queries import (
     covered_months,
     overlaps,
     select_activities_in_window,
+    select_whole_realisation,
 )
 from caron.realisations import (
     Coverage,
@@ -117,6 +118,7 @@ __all__ = [
     "model_v0_5_ontology",
     "overlaps",
     "select_activities_in_window",
+    "select_whole_realisation",
     "validate_candidate",
     "validate_ontology",
 ]

@@ -84,6 +84,27 @@ class _TemporalConstraint:
         )
 
 
+def select_whole_realisation(
+    realisation: ValidatedRealisation,
+) -> GraphView[object]:
+    """Return every asserted record in one immutable query view.
+
+    Coverage remains explicit: this selects the whole accepted realisation,
+    not a complete account of the person's career.
+    """
+
+    return GraphView(
+        query_name="whole_realisation",
+        source_realisation_id=realisation.id,
+        ontology=realisation.ontology,
+        entities=realisation.entities,
+        relations=realisation.relations,
+        bindings=(),
+        results=(),
+        coverage=realisation.coverage,
+    )
+
+
 def covered_months(
     realisation: ValidatedRealisation,
     context_id: EntityId,

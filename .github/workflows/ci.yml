@@ -40,5 +40,6 @@ jobs:
         run: |
           uv run python -m examples.cytoscape_html --output /tmp/career_graph.html
           uv run python -m examples.cytoscape_html --example two-contexts --output /tmp/two_contexts_graph.html
+          uv run python -m examples.cytoscape_html --example temporal-window --output /tmp/temporal_window_graph.html
       - name: Build distributions
         run: uv build

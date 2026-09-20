@@ -1,6 +1,6 @@
 ---
 kind: package_boundary_note
-status: accepted_and_implemented_through_temporal_query_spine
+status: accepted_and_implemented_through_graph_view_visualization_projection
 architecture_contract: 0.2
 ---
 
@@ -32,6 +32,8 @@ decisions:
   temporal_validation: local extent and transitive containment checks
   temporal_queries: small typed catalogue with explicit result classifications
   graph_view: immutable query selection retaining ontology, witnesses, and coverage
+  visualization_input: GraphView rather than ValidatedRealisation
+  visualization_projection: renderer-specific JSON outside semantic contracts
 ```
 
 ## Accepted and implemented retrieval boundary
@@ -41,6 +43,7 @@ retrieval_boundary:
   api: small typed catalogue
   execution_algebra: private and replaceable
   graph_view: immutable query-result projection
+  whole_realisation_view: explicit selection that retains source coverage
   interpretation: interaction-layer responsibility
 ```
 

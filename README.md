@@ -19,21 +19,14 @@ uv run python -m examples.temporal_queries
 ```bash
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
+uv run python -m examples.cytoscape_html --example temporal-window
 ```
 
-The first command generates `examples/career_graph.html`. The second generates
-`examples/two_contexts_graph.html`, where ALICE collision-data analysis during
-an MSc and synthetic-training-data construction during a PhD both use the same
-Python entity. Each activity has its own context, inputs, outputs, supporting
-technologies, and subject matter; no transfer edge is asserted. Generated graph
-files are ignored by Git; regenerate them locally when needed.
+The first command generates `examples/career_graph.html`. The second generates `examples/two_contexts_graph.html`, where ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD both use the same Python entity. Each activity has its own context, inputs, outputs, supporting technologies, and subject matter; no transfer edge is asserted. The third generates `examples/temporal_window_graph.html` from the possible activity matches in 2022. Generated graph files are ignored by Git; regenerate them locally when needed.
 
-Open either file in a browser to explore the graph, inspect entities and
-relations, expand long properties, follow references, and filter entity or
-relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr, so an
-internet connection is required when opening it.
+Open a generated file in a browser to explore the graph, inspect entities and relations, expand long properties, follow references, and filter entity or relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr, so an internet connection is required when opening it.
 
-The experimental adapter currently consumes `ValidatedRealisation`. Relations with a context qualifier, such as `learns`, are rendered as relation-occurrence nodes connected to their source, target, and context so their n-ary meaning is not hidden. Moving this adapter to query-produced `GraphView` values remains a separate interaction-layer change.
+The experimental adapter consumes query-produced `GraphView` values rather than `ValidatedRealisation`. `select_whole_realisation` supplies the two complete-example views while retaining their explicit coverage, and the temporal example supplies a selected subgraph with typed results and witnesses. `TemporalExtent` values are serialized as structured renderer data, temporal matches are available in the inspector, and possible matches use a dashed visual treatment. Relations with a context qualifier, such as `learns`, are rendered as relation-occurrence nodes connected to their source, target, and context so their n-ary meaning is not hidden.
 
 The temporal example validates the ALICE, PhD synthetic-data, and `jax-geopro` contexts, derives exact and bounded covered-month results, establishes the contextual ordering of three Python activities, and returns possible matches for a 2022 window:
 
@@ -52,18 +45,16 @@ uv run python -m examples.semantic_spine
 uv run python -m examples.temporal_queries
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
+uv run python -m examples.cytoscape_html --example temporal-window
 uv build
 ```
 
-GitHub Actions runs these checks on pushes to `main` and on pull requests.
-The tests include deterministic pytest cases and Hypothesis invariant tests.
+GitHub Actions runs these checks on pushes to `main` and on pull requests. The tests include deterministic pytest cases and Hypothesis invariant tests.
 
 ## Scope and next increments
 
-The temporal extension is specified by the [temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and exercised in the [temporal instantiation experiment](docs/career-model-v0.5-temporal-instantiation-experiment.md). The implemented query surface intentionally remains small: `covered_months`, `before`, `overlaps`, and `select_activities_in_window`.
+The temporal extension is specified by the [temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and exercised in the [temporal instantiation experiment](docs/career-model-v0.5-temporal-instantiation-experiment.md). The implemented query surface intentionally remains small: `covered_months`, `before`, `overlaps`, `select_activities_in_window`, and the renderer-supporting `select_whole_realisation`.
 
-Serialization, storage, CLI behavior, activity extents, temporal relation qualifiers, and a complete interval algebra remain deferred. The Cytoscape adapter also continues to consume `ValidatedRealisation`; adapting it to query-produced `GraphView` values is a separate interaction-layer increment.
+Durable semantic serialization, storage, CLI behavior, activity extents, temporal relation qualifiers, period controls, chronological timelines, and a complete interval algebra remain deferred. The current Cytoscape JSON is an interaction-layer projection rather than a persistence format or semantic codec.
 
-See also the [implementation overview](career-ontology-package-skeleton.md),
-[package boundaries](docs/career-ontology-package-boundaries.md), and
-[entity representation notes](docs/career-ontology-entity-representation-pseudocode.md).
+See also the [implementation overview](career-ontology-package-skeleton.md), [package boundaries](docs/career-ontology-package-boundaries.md), and [entity representation notes](docs/career-ontology-entity-representation-pseudocode.md).

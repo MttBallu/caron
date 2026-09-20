@@ -190,6 +190,27 @@
       gap: 0.65rem;
     }
 
+    .query-result-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .query-result {
+      padding: 0.65rem 0.7rem;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.55rem;
+      background: #eff6ff;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .query-result strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      color: #1e3a8a;
+      text-transform: capitalize;
+    }
+
     .property,
     details.property {
       margin: 0;
@@ -339,7 +360,7 @@
     document.title = graphData.metadata.title;
     document.getElementById("view-title").textContent = graphData.metadata.title;
     document.getElementById("view-subtitle").textContent =
-      `${graphData.metadata.ontology_id} · version ${graphData.metadata.ontology_version}`;
+      `${graphData.metadata.ontology_id} · version ${graphData.metadata.ontology_version} · ${graphData.metadata.query.name}`;
     document.getElementById("coverage").textContent =
       `${graphData.metadata.coverage.status}: ${graphData.metadata.coverage.scope}`;
 
@@ -422,6 +443,23 @@
           }
         },
         {
+          selector: 'node[query_classification = "possible"]',
+          style: {
+            "border-color": "#d97706",
+            "border-style": "dashed",
+            "border-width": 4
+          }
+        },
+        {
+          selector: 'node[query_classification = "unknown"]',
+          style: {
+            "background-opacity": 0.45,
+            "border-color": "#64748b",
+            "border-style": "dotted",
+            "border-width": 4
+          }
+        },
+        {
           selector: ".filtered",
           style: { "display": "none" }
         }
@@ -479,6 +517,9 @@
 
     function renderedValue(value) {
       if (value.type === "entity_reference") return referenceButton(value);
+      if (value.type === "temporal_extent") {
+        return element("div", "property-value", value.display);
+      }
       return element("div", "property-value", String(value.value));
     }
 
@@ -513,6 +554,37 @@
       section.appendChild(element("h3", "section-title", "Properties"));
       const list = element("div", "property-list");
       properties.forEach(property => list.appendChild(propertyCard(property)));
+      section.appendChild(list);
+      inspector.appendChild(section);
+    }
+
+    function queryResultDescription(result) {
+      if (result.type === "temporal_match") {
+        return `Window match: ${result.classification}`;
+      }
+      if (result.type === "temporal_predicate") {
+        return `${result.predicate}: ${result.classification}`;
+      }
+      if (result.type === "covered_months") {
+        const bounds = result.maximum === null
+          ? `${result.minimum ?? "?"}+ months`
+          : `${result.minimum ?? "?"}–${result.maximum} months`;
+        return `${result.kind}: ${bounds}`;
+      }
+      return result.type;
+    }
+
+    function appendQueryResults(results) {
+      if (!results.length) return;
+      const section = element("section", "inspector-section");
+      section.appendChild(element("h3", "section-title", "Query results"));
+      const list = element("div", "query-result-list");
+      results.forEach(result => {
+        const card = element("div", "query-result");
+        card.appendChild(element("strong", "", result.type.replaceAll("_", " ")));
+        card.appendChild(document.createTextNode(queryResultDescription(result)));
+        list.appendChild(card);
+      });
       section.appendChild(list);
       inspector.appendChild(section);
     }
@@ -554,6 +626,7 @@
       inspector.appendChild(badge(data.kind, data.color));
       inspector.appendChild(element("h2", "", data.label));
       inspector.appendChild(element("code", "record-id", data.id));
+      appendQueryResults(data.query_results || []);
       appendProperties(data.properties || []);
       appendConnections(node);
     }

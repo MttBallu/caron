@@ -176,24 +176,27 @@ Generate the interactive visualization example with:
 ```bash
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
+uv run python -m examples.cytoscape_html --example temporal-window
 ```
 
-Then open `examples/career_graph.html` or `examples/two_contexts_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example connects ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD through one shared Python entity. Each activity remains grounded in its own context and concrete evidence; no transfer relation is asserted. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
+Then open `examples/career_graph.html`, `examples/two_contexts_graph.html`, or `examples/temporal_window_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example connects ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD through one shared Python entity. Each activity remains grounded in its own context and concrete evidence; no transfer relation is asserted. The temporal-window example renders the possible activity matches for 2022 together with the temporal properties and witnesses retained by the query result. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
 
 ## 7. Visualization experiment boundary
 
 The experiment implements:
 
 ```text
-ValidatedRealisation (temporary GraphView stand-in)
+ValidatedRealisation
+    -> typed query
+    -> immutable GraphView
     -> renderer-specific Cytoscape JSON
     -> generated HTML
     -> graph canvas + inspector state
 ```
 
-The renderer preserves all entity properties and relation qualifiers. A relation carrying a context qualifier is projected as a renderer-only relation-occurrence node connected to its source, target, and context; this prevents the n-ary semantics of relations such as `learns` from appearing as an unqualified binary edge. The browser presents long values such as proposition `content` in collapsed disclosure sections, supports entity and relation filters, and highlights a selected neighborhood.
+The renderer preserves all selected entity properties and relation qualifiers. It serializes `TemporalExtent` as structured JSON and retains typed temporal query results, bindings, witnesses, diagnostics, source-realisation identity, and coverage as renderer metadata. A relation carrying a context qualifier is projected as a renderer-only relation-occurrence node connected to its source, target, and context; this prevents the n-ary semantics of relations such as `learns` from appearing as an unqualified binary edge. The browser presents long values such as proposition `content` in collapsed disclosure sections, supports entity and relation filters, highlights a selected neighborhood, and exposes temporal match classifications in the inspector.
 
-The selected element, collapsed properties, focus, and filters are presentation state. They do not mutate the validated semantic value. When the query layer introduces `GraphView`, the adapter input will change from `ValidatedRealisation` to `GraphView`; the renderer-specific JSON must remain outside the model and query contracts.
+The selected element, collapsed properties, focus, filters, display strings, colors, and line styles are presentation state. They do not mutate the `GraphView` or turn derived temporal results into asserted relations. Renderer-specific JSON remains outside the model and query contracts and is not a persistence format.
 
 ## 8. Deliberately deferred
 
@@ -214,6 +217,6 @@ No empty packages are created for future features. Structure should appear only 
 
 ## 9. Next executable increment
 
-The next increment should be chosen from observed use rather than by filling the package map. A strong candidate is adapting the Cytoscape example to consume temporal `GraphView` values and render derived chronology without turning derived results into asserted edges.
+The next increment should be chosen from observed use rather than by filling the package map. Strong candidates are period controls backed by temporal queries and a chronological projection for the use of a selected technology or skill. Either increment must preserve uncertainty and witnesses without turning display order into asserted `before` relations.
 
 That increment should not introduce a public query language, general optimizer, storage abstraction, or narrative interpretation inside the query engine.
