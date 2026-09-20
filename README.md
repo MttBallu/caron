@@ -4,6 +4,9 @@ A typed career-ontology implementation in Python 3.12, managed with `uv`.
 
 The maintained implementation provides explicit Model 4 and v0.5 ontology schemas, immutable entity and relation records, structured diagnostics, and a validation boundary from `RealisationCandidate` to `Accepted(ValidatedRealisation)` or `Rejected`. The v0.5 slice adds month-level context temporality, derived temporal queries, witnesses, and immutable `GraphView` results. Sources live directly in `caron/`.
 
+[`CURRENT.md`](CURRENT.md) is the authority and version map for the maintained
+baseline.
+
 ## Getting started
 
 ```bash
@@ -37,24 +40,27 @@ uv run python -m examples.temporal_queries
 ## Checks
 
 ```bash
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy caron tests examples
-uv run pytest
-uv run python -m examples.semantic_spine
-uv run python -m examples.temporal_queries
-uv run python -m examples.cytoscape_html
-uv run python -m examples.cytoscape_html --example two-contexts
-uv run python -m examples.cytoscape_html --example temporal-window
-uv build
+uv run --locked --all-groups python tools/verify.py
 ```
 
-GitHub Actions runs these checks on pushes to `main` and on pull requests. The tests include deterministic pytest cases and Hypothesis invariant tests.
+This single reproducibility gate runs formatting, linting, strict typing, the
+deterministic and Hypothesis suites, both executable examples, all three viewer
+generations, and distribution builds. GitHub Actions runs the same command on
+pushes to `main` and on pull requests.
 
 ## Scope and next increments
 
 The temporal extension is specified by the [temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and exercised in the [temporal instantiation experiment](docs/career-model-v0.5-temporal-instantiation-experiment.md). The implemented query surface intentionally remains small: `covered_months`, `before`, `overlaps`, `select_activities_in_window`, and the renderer-supporting `select_whole_realisation`.
 
-Durable semantic serialization, storage, CLI behavior, activity extents, temporal relation qualifiers, period controls, chronological timelines, and a complete interval algebra remain deferred. The current Cytoscape JSON is an interaction-layer projection rather than a persistence format or semantic codec.
+The private witness-carrying algebra preserves the accepted join, left-join,
+union, extension, property-lookup, projection, and ordering regressions. It is
+not a public plan language; schema-aware plan validation and stable named query
+contracts remain deferred.
+
+Durable semantic serialization, storage, CLI behavior, activity extents,
+temporal relation qualifiers, period controls, chronological timelines, and a
+complete interval algebra also remain deferred. The current Cytoscape JSON is
+an interaction-layer projection rather than a persistence format or semantic
+codec.
 
 See also the [implementation overview](career-ontology-package-skeleton.md), [package boundaries](docs/career-ontology-package-boundaries.md), and [entity representation notes](docs/career-ontology-entity-representation-pseudocode.md).

@@ -22,24 +22,5 @@ jobs:
           version: "0.12.13"
           python-version: "3.12"
           enable-cache: true
-      - name: Install locked dependencies
-        run: uv sync --locked --all-groups
-      - name: Check formatting
-        run: uv run ruff format --check .
-      - name: Lint
-        run: uv run ruff check .
-      - name: Check types
-        run: uv run mypy caron tests examples
-      - name: Run unit and invariant tests
-        run: uv run pytest
-      - name: Run semantic example
-        run: uv run python -m examples.semantic_spine
-      - name: Run temporal query example
-        run: uv run python -m examples.temporal_queries
-      - name: Generate example viewers
-        run: |
-          uv run python -m examples.cytoscape_html --output /tmp/career_graph.html
-          uv run python -m examples.cytoscape_html --example two-contexts --output /tmp/two_contexts_graph.html
-          uv run python -m examples.cytoscape_html --example temporal-window --output /tmp/temporal_window_graph.html
-      - name: Build distributions
-        run: uv build
+      - name: Run the M0 reproducibility gate
+        run: uv run --locked --all-groups python tools/verify.py

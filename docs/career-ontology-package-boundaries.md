@@ -31,6 +31,7 @@ decisions:
   temporal_values: immutable month-level value objects
   temporal_validation: local extent and transitive containment checks
   temporal_queries: small typed catalogue with explicit result classifications
+  query_algebra: private witness-carrying execution experiment
   graph_view: immutable query selection retaining ontology, witnesses, and coverage
   visualization_input: GraphView rather than ValidatedRealisation
   visualization_projection: renderer-specific JSON outside semantic contracts
@@ -41,7 +42,7 @@ decisions:
 ```yaml
 retrieval_boundary:
   api: small typed catalogue
-  execution_algebra: private and replaceable
+  execution_algebra: implemented, private, unchecked, and replaceable
   graph_view: immutable query-result projection
   whole_realisation_view: explicit selection that retains source coverage
   interpretation: interaction-layer responsibility
@@ -57,6 +58,11 @@ open_implementation_choices:
 ```
 
 Internal indexing remains absent until retrieval pressure requires it. No repository protocol is introduced around a single in-memory implementation.
+
+The internal algebra is retained because its joins, optional matches, unions,
+ordering, and witness propagation have accepted regression value. It is not a
+public query-plan API. Candidate/validated plan forms and schema-aware plan
+diagnostics remain a later contract.
 
 ## Boundary rule
 

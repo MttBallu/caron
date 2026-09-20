@@ -1,8 +1,8 @@
 ---
 kind: package_skeleton
-status: implemented_temporal_query_spine
+status: m0_consolidated_baseline
 architecture_contract: 0.2
-implementation_status: temporal_validation_and_queries_complete
+implementation_status: semantic_query_temporal_and_viewer_regressions_consolidated
 ---
 
 # Career Ontology — First Executable Spine
@@ -22,7 +22,8 @@ The maintained implementation includes:
 - a distinct career model v0.5 schema with month-level context temporality;
 - immutable temporal values and local and transitive containment validation;
 - typed temporal predicates and covered-month results with explicit epistemic classifications;
-- witness-preserving immutable `GraphView` query selections.
+- witness-preserving immutable `GraphView` query selections;
+- a private witness-carrying binding algebra preserving accepted composition regressions.
 
 General retrieval, persistence, serialization, application orchestration, and CLI behavior remain absent. The temporal query catalogue is deliberately small. An interaction-layer visualization experiment exists under `examples/`, but it is not part of the public package API.
 
@@ -30,6 +31,7 @@ General retrieval, persistence, serialization, application orchestration, and CL
 
 ```text
 career-ontology/
+├── CURRENT.md
 ├── career-ontology-package-skeleton.md
 ├── pyproject.toml
 ├── uv.lock
@@ -41,10 +43,14 @@ career-ontology/
 │   ├── realisations.py
 │   ├── temporal.py
 │   ├── queries.py
+│   ├── _query_algebra.py
 │   ├── views.py
 │   ├── diagnostics.py
 │   └── validation.py
 ├── docs/
+│   ├── career-model-v0.5-temporal-contract.md
+│   ├── career-model-v0.5-temporal-contract-review.md
+│   ├── career-model-v0.5-temporal-instantiation-experiment.md
 │   ├── career-ontology-entity-representation-pseudocode.md
 │   └── career-ontology-package-boundaries.md
 ├── examples/
@@ -54,14 +60,21 @@ career-ontology/
 │   ├── two_contexts.py
 │   ├── cytoscape_html.py
 │   └── cytoscape_template.html
+├── tools/
+│   └── verify.py
 └── tests/
     ├── fixtures/
     ├── unit/
     │   ├── test_cytoscape_example.py
     │   ├── test_ontology.py
+    │   ├── test_query_algebra.py
+    │   ├── test_temporal_queries.py
+    │   ├── test_temporal_validation.py
+    │   ├── test_temporal_values.py
     │   ├── test_two_contexts_example.py
     │   └── test_validation.py
     └── invariants/
+        ├── test_temporal_invariants.py
         └── test_validation_invariants.py
 ```
 
@@ -77,6 +90,7 @@ The package uses a direct layout: importable sources live in `caron/`, not `src/
 | `realisations.py` | Candidate and validated forms, coverage, direct immutable reads | Decoding, storage, narrative answers |
 | `temporal.py` | `YearMonth`, temporal end states, extents, and windows | Graph traversal, query evaluation, rendering |
 | `queries.py` | Typed temporal predicates, window selection, covered-month results, and private constraint composition | Persistence, serialization, prose answers |
+| `_query_algebra.py` | Private joins, optional matching, union, projection, ordering, and witness-derived views | Stable public plan AST, schema validation, persistence |
 | `views.py` | Immutable `GraphView`, bindings, and witnesses | Query evaluation and renderer-specific state |
 | `diagnostics.py` | Stable codes, severity, layer attribution | Validation control flow |
 | `validation.py` | Ontology, local-record, and whole-realisation validation | Parsing, database access, query evaluation |
@@ -151,15 +165,10 @@ The suite combines deterministic cases with Hypothesis invariants. In addition t
 
 Hypothesis increases confidence in invariants; it is not a formal proof system.
 
-Run the complete verification set with:
+Run the complete verification set with one command:
 
 ```bash
-uv sync --all-groups
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy caron tests examples
-uv run pytest
-uv build
+uv run --locked --all-groups python tools/verify.py
 ```
 
 Run the executable guided example with:
