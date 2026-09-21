@@ -19,6 +19,23 @@ uv run python -m examples.temporal_queries
 
 ## Interactive examples
 
+Generate the executable ontology-schema overview:
+
+```bash
+uv run python -m examples.ontology_schema_html
+uv run python -m examples.ontology_schema_html --version 4
+```
+
+These commands render ontology versions `0.5` and `4`, respectively. The
+interactive graph shows concept types as nodes and expands every relation rule
+into its admissible source/target type pairs. Selecting a concept exposes its
+properties and allowed relations; selecting an edge exposes the complete rule
+signature, qualifiers, and cardinality requirements. The projection is derived
+directly from `OntologySchema`, so it is both an overview and a check of the
+actual executable vocabulary.
+
+Generate realisation and query-result views:
+
 ```bash
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
@@ -29,7 +46,7 @@ The first command generates `examples/career_graph.html`. The second generates `
 
 Open a generated file in a browser to explore the graph, inspect entities and relations, expand long properties, follow references, and filter entity or relation kinds. The viewer loads Cytoscape.js 3.34.1 from jsDelivr, so an internet connection is required when opening it.
 
-The experimental adapter consumes query-produced `GraphView` values rather than `ValidatedRealisation`. `select_whole_realisation` supplies the two complete-example views while retaining their explicit coverage, and the temporal example supplies a selected subgraph with typed results and witnesses. `TemporalExtent` values are serialized as structured renderer data, temporal matches are available in the inspector, and possible matches use a dashed visual treatment. Relations with a context qualifier, such as `learns`, are rendered as relation-occurrence nodes connected to their source, target, and context so their n-ary meaning is not hidden.
+The realisation adapter consumes query-produced `GraphView` values rather than `ValidatedRealisation`. This is distinct from the schema viewer, which consumes `OntologySchema` and displays admissible rules rather than asserted career facts. `select_whole_realisation` supplies the two complete-example views while retaining their explicit coverage, and the temporal example supplies a selected subgraph with typed results and witnesses. `TemporalExtent` values are serialized as structured renderer data, temporal matches are available in the inspector, and possible matches use a dashed visual treatment. Relations with a context qualifier, such as `learns`, are rendered as relation-occurrence nodes connected to their source, target, and context so their n-ary meaning is not hidden.
 
 The temporal example validates the ALICE, PhD synthetic-data, and `jax-geopro` contexts, derives exact and bounded covered-month results, establishes the contextual ordering of three Python activities, and returns possible matches for a 2022 window:
 
@@ -44,9 +61,10 @@ uv run --locked --all-groups python tools/verify.py
 ```
 
 This single reproducibility gate runs formatting, linting, strict typing, the
-deterministic and Hypothesis suites, both executable examples, all three viewer
-generations, and distribution builds. GitHub Actions runs the same command on
-pushes to `main` and on pull requests.
+deterministic and Hypothesis suites, both executable examples, all three
+realisation-view generations, both ontology-schema versions, and distribution
+builds. GitHub Actions runs the same command on pushes to `main` and on pull
+requests.
 
 ## Scope and next increments
 

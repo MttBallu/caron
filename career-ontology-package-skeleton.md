@@ -23,7 +23,8 @@ The maintained implementation includes:
 - immutable temporal values and local and transitive containment validation;
 - typed temporal predicates and covered-month results with explicit epistemic classifications;
 - witness-preserving immutable `GraphView` query selections;
-- a private witness-carrying binding algebra preserving accepted composition regressions.
+- a private witness-carrying binding algebra preserving accepted composition regressions;
+- versioned ontology-schema inspection derived directly from `OntologySchema`.
 
 General retrieval, persistence, serialization, application orchestration, and CLI behavior remain absent. The temporal query catalogue is deliberately small. An interaction-layer visualization experiment exists under `examples/`, but it is not part of the public package API.
 
@@ -59,13 +60,16 @@ career-ontology/
 │   ├── temporal_queries.py
 │   ├── two_contexts.py
 │   ├── cytoscape_html.py
-│   └── cytoscape_template.html
+│   ├── cytoscape_template.html
+│   ├── ontology_schema_html.py
+│   └── ontology_schema_template.html
 ├── tools/
 │   └── verify.py
 └── tests/
     ├── fixtures/
     ├── unit/
     │   ├── test_cytoscape_example.py
+    │   ├── test_ontology_schema_example.py
     │   ├── test_ontology.py
     │   ├── test_query_algebra.py
     │   ├── test_temporal_queries.py
@@ -183,16 +187,18 @@ The example constructs a small PhD activity graph, validates it, performs direct
 Generate the interactive visualization example with:
 
 ```bash
+uv run python -m examples.ontology_schema_html
+uv run python -m examples.ontology_schema_html --version 4
 uv run python -m examples.cytoscape_html
 uv run python -m examples.cytoscape_html --example two-contexts
 uv run python -m examples.cytoscape_html --example temporal-window
 ```
 
-Then open `examples/career_graph.html`, `examples/two_contexts_graph.html`, or `examples/temporal_window_graph.html` in a browser. Generated graph files are ignored by Git. The cross-context example connects ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD through one shared Python entity. Each activity remains grounded in its own context and concrete evidence; no transfer relation is asserted. The temporal-window example renders the possible activity matches for 2022 together with the temporal properties and witnesses retained by the query result. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
+Then open the generated `examples/*_graph.html` file in a browser. Generated graph files are ignored by Git. The ontology-schema views display the exact executable concepts, properties, relation signatures, qualifiers, and requirements for version `0.5` or `4`; they do not display a realisation. The cross-context realisation example connects ALICE collision-data analysis during an MSc and synthetic-training-data construction during a PhD through one shared Python entity. Each activity remains grounded in its own context and concrete evidence; no transfer relation is asserted. The temporal-window example renders the possible activity matches for 2022 together with the temporal properties and witnesses retained by the query result. The generated pages load the pinned Cytoscape.js 3.34.1 browser library from jsDelivr, so this first experiment requires an internet connection when a page is opened.
 
 ## 7. Visualization experiment boundary
 
-The experiment implements:
+The realisation viewer implements:
 
 ```text
 ValidatedRealisation
@@ -202,6 +208,21 @@ ValidatedRealisation
     -> generated HTML
     -> graph canvas + inspector state
 ```
+
+The schema viewer has a parallel but distinct projection:
+
+```text
+OntologySchema
+    -> renderer-specific Cytoscape JSON
+    -> generated HTML
+    -> rule graph + inspector state
+```
+
+It expands each relation definition into all admissible source-kind/target-kind
+pairs while retaining the complete definition on every displayed edge. It also
+retains concept properties, relation qualifiers, and endpoint cardinality
+requirements. The graph therefore reports executable expressivity without
+claiming that any entity or relation has been asserted in a realisation.
 
 The renderer preserves all selected entity properties and relation qualifiers. It serializes `TemporalExtent` as structured JSON and retains typed temporal query results, bindings, witnesses, diagnostics, source-realisation identity, and coverage as renderer metadata. A relation carrying a context qualifier is projected as a renderer-only relation-occurrence node connected to its source, target, and context; this prevents the n-ary semantics of relations such as `learns` from appearing as an unqualified binary edge. The browser presents long values such as proposition `content` in collapsed disclosure sections, supports entity and relation filters, highlights a selected neighborhood, and exposes temporal match classifications in the inspector.
 

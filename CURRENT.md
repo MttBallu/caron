@@ -62,7 +62,9 @@ The one authoritative source tree is this repository:
   left-join, union, extension, property lookup, projection, and ordering
   behavior as a private execution experiment;
 - `examples/cytoscape_html.py` adapts `GraphView` values to renderer JSON and
-  never serves as a persistence codec.
+  never serves as a persistence codec;
+- `examples/ontology_schema_html.py` projects an exact `OntologySchema` version
+  to an interactive rule graph; it does not represent asserted career facts.
 
 The algebra is intentionally private and unchecked. Publishing a plan AST,
 adding schema-aware plan validation, and stabilizing named non-temporal query
@@ -72,8 +74,8 @@ contracts belong to M2A, not M0.
 
 From a fresh checkout with `uv` installed, one command installs the locked
 development environment and runs formatting, linting, strict typing, unit and
-invariant tests, semantic and temporal examples, all three viewer generations,
-and distribution builds:
+invariant tests, semantic and temporal examples, all three realisation viewers,
+both ontology-schema viewers, and distribution builds:
 
 ```bash
 uv run --locked --all-groups python tools/verify.py
@@ -90,7 +92,7 @@ gate generates it in a temporary directory from the same checked-out sources.
 | One test command | `uv run --locked --all-groups python tools/verify.py` |
 | One current version record | This file and its containing Git commit |
 | Accepted regressions pass | Current unit/invariant suite includes ported query-algebra cases and is run by the gate |
-| Latest viewer comes from the same tree | The gate regenerates complete, two-context, and temporal-window viewers |
+| Latest viewers come from the same tree | The gate regenerates complete, two-context, temporal-window, and versioned ontology-schema viewers |
 
 ## Explicitly unresolved
 

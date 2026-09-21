@@ -39,9 +39,26 @@ def main() -> None:
                 command.extend(("--example", example_name))
             _run(f"{example_name} viewer", command)
 
+        for ontology_version, output_name in (
+            ("4", "ontology_4_graph.html"),
+            ("0.5", "ontology_0_5_graph.html"),
+        ):
+            _run(
+                f"ontology {ontology_version} schema viewer",
+                [
+                    sys.executable,
+                    "-m",
+                    "examples.ontology_schema_html",
+                    "--version",
+                    ontology_version,
+                    "--output",
+                    str(temporary / output_name),
+                ],
+            )
+
         _run("distribution build", ["uv", "build", "--out-dir", str(temporary)])
 
-    print("\nAll M0 verification checks passed.", flush=True)
+    print("\nAll verification checks passed.", flush=True)
 
 
 if __name__ == "__main__":

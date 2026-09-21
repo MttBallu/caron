@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caron ontology schema</title>
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.34.1/dist/cytoscape.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f4f6f8;
+      --border: #d8dee8;
+      --muted: #64748b;
+      --surface: #ffffff;
+      --accent: #2563eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f4f6f8;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 72px;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 0.22rem 0 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .summary {
+      max-width: 52ch;
+      padding: 0.48rem 0.72rem;
+      border-radius: 0.5rem;
+      color: #1e3a5f;
+      background: #e0f2fe;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      text-align: right;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(190px, 230px) minmax(0, 1fr) minmax(290px, 370px);
+      height: calc(100vh - 72px);
+      min-height: 580px;
+    }
+
+    aside,
+    .inspector {
+      overflow: auto;
+      background: var(--surface);
+    }
+
+    aside {
+      padding: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .inspector {
+      padding: 1.1rem;
+      border-left: 1px solid var(--border);
+    }
+
+    .graph-panel {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    #graph {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(circle at 25% 20%, rgba(37, 99, 235, 0.06), transparent 30%),
+        #f8fafc;
+    }
+
+    .section-title {
+      margin: 0 0 0.65rem;
+      color: #334155;
+      font-size: 0.7rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .filter-section + .filter-section { margin-top: 1.2rem; }
+
+    .filter-list {
+      display: grid;
+      gap: 0.42rem;
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 0.48rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .filter-option input { accent-color: var(--accent); }
+
+    .kind-dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      flex: none;
+      border-radius: 50%;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      margin-bottom: 1.2rem;
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      border-radius: 0.45rem;
+      padding: 0.45rem 0.6rem;
+      color: #1e293b;
+      background: #fff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover { background: #f1f5f9; }
+
+    .legend {
+      margin-top: 1.2rem;
+      padding: 0.65rem;
+      border: 1px solid #dbeafe;
+      border-radius: 0.5rem;
+      color: #475569;
+      background: #f8fbff;
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
+    .empty-state {
+      margin: 3rem 0;
+      color: var(--muted);
+      font-size: 0.87rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .kind-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: #334155;
+      background: #f8fafc;
+      font-size: 0.72rem;
+      font-weight: 650;
+    }
+
+    .inspector h2 {
+      margin: 0;
+      font-size: 1.12rem;
+      line-height: 1.25;
+    }
+
+    .record-id {
+      display: block;
+      margin: 0.45rem 0 1.1rem;
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .inspector-section { margin-top: 1.25rem; }
+
+    .card-list {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .card {
+      padding: 0.65rem 0.7rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.55rem;
+      background: #fbfdff;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .card.required {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      color: #1e293b;
+      font-weight: 700;
+    }
+
+    .field-kind,
+    .optional {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    .card-detail {
+      margin-top: 0.3rem;
+      color: #475569;
+    }
+
+    .connection {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.45rem;
+      align-items: start;
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 0.76rem;
+      text-align: left;
+    }
+
+    .direction {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .connection-kind { font-weight: 700; }
+
+    .error-banner {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      top: 1rem;
+      right: 1rem;
+      left: 1rem;
+      padding: 0.8rem;
+      border: 1px solid #fecaca;
+      border-radius: 0.5rem;
+      color: #991b1b;
+      background: #fef2f2;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 900px) {
+      header { align-items: flex-start; }
+      .summary { display: none; }
+      main {
+        grid-template-columns: 180px minmax(0, 1fr);
+        grid-template-rows: minmax(440px, 62vh) auto;
+        height: auto;
+      }
+      aside { grid-row: 1 / span 2; }
+      .inspector {
+        grid-column: 2;
+        min-height: 320px;
+        border-top: 1px solid var(--border);
+        border-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="view-title">Caron ontology schema</h1>
+      <p class="subtitle" id="view-subtitle"></p>
+    </div>
+    <div class="summary" id="view-summary"></div>
+  </header>
+
+  <main>
+    <aside aria-label="Schema graph controls">
+      <div class="toolbar">
+        <button id="fit-button" type="button">Fit graph</button>
+        <button id="clear-button" type="button">Clear focus</button>
+      </div>
+
+      <section class="filter-section">
+        <h2 class="section-title">Concepts</h2>
+        <div class="filter-list" id="concept-filters"></div>
+      </section>
+
+      <section class="filter-section">
+        <h2 class="section-title">Relation rules</h2>
+        <div class="filter-list" id="relation-filters"></div>
+      </section>
+
+      <div class="legend">
+        Each edge is an admissible source/target type pair. A thicker blue edge
+        carries a cardinality requirement for that endpoint pair.
+      </div>
+    </aside>
+
+    <section class="graph-panel">
+      <div class="error-banner" id="error-banner"></div>
+      <div id="graph" aria-label="Interactive ontology schema graph"></div>
+    </section>
+
+    <section class="inspector" aria-live="polite">
+      <div id="inspector-content">
+        <p class="empty-state">
+          Select a concept or relation rule to inspect what the executable
+          ontology permits.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const graphData = __CARON_ONTOLOGY_DATA__;
+
+    const inspector = document.getElementById("inspector-content");
+    const errorBanner = document.getElementById("error-banner");
+    const selectedConcepts = new Set(graphData.nodes.map(node => node.data.id));
+    const selectedRelations = new Set(graphData.edges.map(edge => edge.data.kind));
+
+    document.title = graphData.metadata.title;
+    document.getElementById("view-title").textContent = graphData.metadata.title;
+    document.getElementById("view-subtitle").textContent =
+      `${graphData.metadata.ontology_id} · executable version ${graphData.metadata.ontology_version}`;
+    document.getElementById("view-summary").textContent =
+      `${graphData.metadata.concept_count} concepts · ` +
+      `${graphData.metadata.relation_rule_count} relation rules · ` +
+      `${graphData.metadata.expanded_edge_count} admissible endpoint pairs · ` +
+      `${graphData.metadata.requirement_count} cardinality requirements`;
+
+    if (typeof cytoscape === "undefined") {
+      errorBanner.style.display = "block";
+      errorBanner.textContent =
+        "Cytoscape.js could not be loaded. This viewer currently requires an internet connection.";
+      throw new Error("Cytoscape.js is unavailable");
+    }
+
+    const cy = cytoscape({
+      container: document.getElementById("graph"),
+      elements: [...graphData.nodes, ...graphData.edges],
+      layout: {
+        name: "cose",
+        animate: false,
+        idealEdgeLength: 135,
+        nodeOverlap: 28,
+        padding: 44
+      },
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "data(color)",
+            "border-color": "#ffffff",
+            "border-width": 2,
+            "color": "#172033",
+            "font-size": 11,
+            "font-weight": 650,
+            "height": 46,
+            "label": "data(label)",
+            "shape": "data(shape)",
+            "text-background-color": "#ffffff",
+            "text-background-opacity": 0.9,
+            "text-background-padding": 3,
+            "text-margin-y": 7,
+            "text-valign": "bottom",
+            "width": 46
+          }
+        },
+        {
+          selector: "edge",
+          style: {
+            "curve-style": "bezier",
+            "font-size": 8,
+            "label": "data(label)",
+            "line-color": "#94a3b8",
+            "target-arrow-color": "#94a3b8",
+            "target-arrow-shape": "triangle",
+            "text-background-color": "#f8fafc",
+            "text-background-opacity": 0.92,
+            "text-background-padding": 2,
+            "text-rotation": "autorotate",
+            "width": 1.5
+          }
+        },
+        {
+          selector: 'edge[has_requirement = true]',
+          style: {
+            "line-color": "#2563eb",
+            "target-arrow-color": "#2563eb",
+            "width": 3
+          }
+        },
+        {
+          selector: ".dimmed",
+          style: { "opacity": 0.13, "text-opacity": 0.07 }
+        },
+        {
+          selector: ".focused-node",
+          style: {
+            "border-color": "#0f172a",
+            "border-width": 4,
+            "height": 54,
+            "width": 54,
+            "z-index": 20
+          }
+        },
+        {
+          selector: ".focused-edge",
+          style: {
+            "line-color": "#dc2626",
+            "target-arrow-color": "#dc2626",
+            "width": 4,
+            "z-index": 20
+          }
+        },
+        {
+          selector: ".filtered",
+          style: { "display": "none" }
+        }
+      ]
+    });
+
+    function clearChildren(element) {
+      while (element.firstChild) element.removeChild(element.firstChild);
+    }
+
+    function element(tag, className, text) {
+      const result = document.createElement(tag);
+      if (className) result.className = className;
+      if (text !== undefined) result.textContent = text;
+      return result;
+    }
+
+    function badge(label, color) {
+      const result = element("div", "kind-badge");
+      const dot = element("span", "kind-dot");
+      dot.style.backgroundColor = color || "#64748b";
+      result.append(dot, document.createTextNode(label));
+      return result;
+    }
+
+    function clearFocus() {
+      cy.elements().removeClass("dimmed focused-node focused-edge");
+    }
+
+    function focusNode(node) {
+      clearFocus();
+      cy.elements().addClass("dimmed");
+      node.closedNeighborhood().removeClass("dimmed");
+      node.addClass("focused-node");
+      cy.animate({ center: { eles: node }, duration: 180 });
+    }
+
+    function focusEdge(edge) {
+      clearFocus();
+      cy.elements().addClass("dimmed");
+      edge.removeClass("dimmed").addClass("focused-edge");
+      edge.connectedNodes().removeClass("dimmed");
+      cy.animate({ center: { eles: edge }, duration: 180 });
+    }
+
+    function appendSection(title, items) {
+      if (!items.length) return;
+      const section = element("section", "inspector-section");
+      section.appendChild(element("h3", "section-title", title));
+      const list = element("div", "card-list");
+      items.forEach(item => list.appendChild(item));
+      section.appendChild(list);
+      inspector.appendChild(section);
+    }
+
+    function fieldCard(field) {
+      const card = element("div", `card${field.required ? " required" : ""}`);
+      const title = element("div", "card-title");
+      title.appendChild(document.createTextNode(field.name));
+      title.appendChild(element("span", "field-kind", field.value_kind));
+      card.appendChild(title);
+      card.appendChild(
+        element("div", "card-detail", field.required ? "required" : "optional")
+      );
+      if (field.allowed_reference_kinds.length) {
+        card.appendChild(
+          element(
+            "div",
+            "card-detail",
+            `references: ${field.allowed_reference_kinds.join(" | ")}`
+          )
+        );
+      }
+      return card;
+    }
+
+    function signatureCard(name, value) {
+      const card = element("div", "card");
+      const title = element("div", "card-title");
+      title.appendChild(document.createTextNode(name));
+      card.appendChild(title);
+      card.appendChild(element("div", "card-detail", value));
+      return card;
+    }
+
+    function requirementCard(requirement) {
+      const card = element("div", "card required");
+      const title = element("div", "card-title");
+      title.appendChild(
+        document.createTextNode(`${requirement.concept} at ${requirement.endpoint}`)
+      );
+      title.appendChild(element("span", "field-kind", requirement.display));
+      card.appendChild(title);
+      card.appendChild(
+        element(
+          "div",
+          "card-detail",
+          `Each ${requirement.concept} requires ${requirement.display} ${requirement.relation_kind} relation(s) at this endpoint.`
+        )
+      );
+      return card;
+    }
+
+    function connectionButton(edge, nodeId) {
+      const edgeData = edge.data();
+      const outgoing = edgeData.source === nodeId;
+      const other = outgoing ? edge.target() : edge.source();
+      const button = element("button", "connection");
+      button.type = "button";
+      button.appendChild(element("span", "direction", outgoing ? "→" : "←"));
+      const text = element("span");
+      text.appendChild(element("span", "connection-kind", edgeData.kind));
+      text.appendChild(document.createTextNode(` · ${other.data("label")}`));
+      button.appendChild(text);
+      button.addEventListener("click", () => {
+        edge.select();
+        focusEdge(edge);
+        renderEdge(edge);
+      });
+      return button;
+    }
+
+    function renderNode(node) {
+      clearChildren(inspector);
+      const data = node.data();
+      inspector.appendChild(badge("Concept", data.color));
+      inspector.appendChild(element("h2", "", data.label));
+      inspector.appendChild(element("code", "record-id", data.id));
+      appendSection("Properties", (data.properties || []).map(fieldCard));
+      appendSection(
+        "Admissible relations",
+        node.connectedEdges().map(edge => connectionButton(edge, node.id()))
+      );
+    }
+
+    function renderEdge(edge) {
+      clearChildren(inspector);
+      const data = edge.data();
+      inspector.appendChild(badge("Relation rule", "#2563eb"));
+      inspector.appendChild(element("h2", "", data.kind));
+      inspector.appendChild(element("code", "record-id", data.id));
+      appendSection("Allowed signature", [
+        signatureCard("source kinds", data.source_kinds.join(" | ")),
+        signatureCard("target kinds", data.target_kinds.join(" | ")),
+        signatureCard(
+          "displayed endpoint pair",
+          `${data.source} → ${data.target} (${data.expansion_index}/${data.expansion_count})`
+        )
+      ]);
+      appendSection("Qualifiers", (data.qualifiers || []).map(fieldCard));
+      appendSection(
+        "Cardinality requirements",
+        (data.requirements || []).map(requirementCard)
+      );
+    }
+
+    function emptyInspector() {
+      clearChildren(inspector);
+      inspector.appendChild(
+        element(
+          "p",
+          "empty-state",
+          "Select a concept or relation rule to inspect what the executable ontology permits."
+        )
+      );
+    }
+
+    function applyFilters() {
+      cy.batch(() => {
+        cy.nodes().forEach(node => {
+          node.toggleClass("filtered", !selectedConcepts.has(node.id()));
+        });
+        cy.edges().forEach(edge => {
+          const endpointHidden =
+            !selectedConcepts.has(edge.data("source")) ||
+            !selectedConcepts.has(edge.data("target"));
+          edge.toggleClass(
+            "filtered",
+            endpointHidden || !selectedRelations.has(edge.data("kind"))
+          );
+        });
+      });
+    }
+
+    function addFilter(container, value, checkedSet, color) {
+      const label = element("label", "filter-option");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = true;
+      input.addEventListener("change", () => {
+        if (input.checked) checkedSet.add(value);
+        else checkedSet.delete(value);
+        applyFilters();
+      });
+      label.appendChild(input);
+      if (color) {
+        const dot = element("span", "kind-dot");
+        dot.style.backgroundColor = color;
+        label.appendChild(dot);
+      }
+      label.appendChild(document.createTextNode(value));
+      container.appendChild(label);
+    }
+
+    const conceptFilters = document.getElementById("concept-filters");
+    graphData.nodes
+      .map(node => node.data)
+      .sort((left, right) => left.label.localeCompare(right.label))
+      .forEach(data => addFilter(conceptFilters, data.id, selectedConcepts, data.color));
+
+    const relationFilters = document.getElementById("relation-filters");
+    [...selectedRelations]
+      .sort()
+      .forEach(kind => addFilter(relationFilters, kind, selectedRelations));
+
+    cy.on("tap", "node", event => {
+      focusNode(event.target);
+      renderNode(event.target);
+    });
+
+    cy.on("tap", "edge", event => {
+      focusEdge(event.target);
+      renderEdge(event.target);
+    });
+
+    cy.on("tap", event => {
+      if (event.target === cy) {
+        clearFocus();
+        emptyInspector();
+      }
+    });
+
+    document.getElementById("fit-button").addEventListener("click", () => {
+      clearFocus();
+      cy.fit(cy.elements(":visible"), 42);
+    });
+
+    document.getElementById("clear-button").addEventListener("click", () => {
+      clearFocus();
+      emptyInspector();
+    });
+  </script>
+</body>
+</html>

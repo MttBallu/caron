@@ -1,6 +1,6 @@
 ---
 kind: package_boundary_note
-status: accepted_and_implemented_through_graph_view_visualization_projection
+status: accepted_and_implemented_through_visualization_projections
 architecture_contract: 0.2
 ---
 
@@ -33,7 +33,8 @@ decisions:
   temporal_queries: small typed catalogue with explicit result classifications
   query_algebra: private witness-carrying execution experiment
   graph_view: immutable query selection retaining ontology, witnesses, and coverage
-  visualization_input: GraphView rather than ValidatedRealisation
+  realisation_visualization_input: GraphView rather than ValidatedRealisation
+  schema_visualization_input: OntologySchema
   visualization_projection: renderer-specific JSON outside semantic contracts
 ```
 
