@@ -37,6 +37,14 @@ schema. Their full specification reconciliation is an M1 deliverable.
 Documents outside this table may explain earlier decisions, but they do not
 override the current code, tests, temporal contract, or package-boundary note.
 
+## Active milestone
+
+M1-A is complete. The
+[M1-A reconciliation](docs/career-ontology-m1a-reconciliation.md) maps every
+Model 4.2 entity, relation, invariant, architecture boundary, and competency
+question to executable versions `4` and `0.5`. It is a diagnosis, not a new
+ontology authority. M1-B is the next decision gate.
+
 ## Maintained implementation
 
 The one authoritative source tree is this repository:
