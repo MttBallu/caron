@@ -57,16 +57,22 @@ keeping the `caron` package version independent. The
 [accepted M1-C specification](docs/career-ontology-v5.0-specification.md)
 consolidates those decisions into one exact normative schema. Implementation
 is tracked in the [maintained task list](docs/career-ontology-v5.0-implementation-plan.md).
-Phases 1 and 2 have added the meta-model extensions and complete development
-catalogue: 13 concepts, 31 relation signatures, six cardinalities, and eight
-invariant declarations. Phase 3 (local validation) is next.
+Phases 1–3 have added the meta-model extensions, the complete development
+catalogue (13 concepts, 31 relation signatures, six cardinalities, and eight
+invariant declarations), and local record validation. Phase 4
+(realisation-wide invariants) is next.
 
 The private `_career_ontology_v5_0_development()` factory returns version
-`5.0-dev`, not the accepted `5.0` identifier. All eight invariant handlers
-remain pending; ontology self-validation reports them explicitly and candidate
+`5.0-dev`, not the accepted `5.0` identifier. The identifier and required-text
+handlers are implemented; six graph-wide handlers remain pending. Ontology
+self-validation reports them explicitly and candidate
 validation refuses acceptance. The public `career_ontology_v5_0()` factory
 and exact `5.0` identity remain gated on full specification conformance.
 Package version `0.1.0` and existing examples/viewer commands are unchanged.
+The local stage checks record shape, identifiers, required text, typed values,
+and reference closure before graph checks can run. The full verification gate
+passes with 349 tests; details and stable diagnostic codes are recorded in
+Phase 3 of the implementation plan.
 
 ## Pre-1.0 implementation-transition policy
 
@@ -95,7 +101,8 @@ The one authoritative source tree is this repository:
 
 - `caron/ontology.py` defines immutable schema records and versions `4` and
   `0.5`, plus the private `5.0-dev` catalogue;
-- `caron/_invariants.py` owns the internal registry of invariant handlers;
+- `caron/_invariants.py` owns the internal staged registry of invariant handlers
+  and the identifier/required-text implementations;
   schema declarations contain identifiers, not callbacks;
 - `caron/entities.py`, `relations.py`, and `realisations.py` own semantic
   records, stable assertion identities, coverage, and validated reads;

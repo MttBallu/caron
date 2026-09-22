@@ -2,7 +2,7 @@
 
 Expected signatures below are transcribed independently from specification
 sections 7–10, not generated from the executable schema. These tests check
-schema data; candidate conformance awaits the Phase 3–4 invariant handlers.
+schema data; candidate conformance awaits the remaining Phase 4 handlers.
 """
 
 from dataclasses import replace
@@ -263,12 +263,15 @@ def test_interpretive_concepts_are_absent(schema: OntologySchema, kind: str) -> 
 def test_schema_self_validation_reports_only_pending_handlers(
     schema: OntologySchema,
 ) -> None:
-    # Phase 2 readiness guard: update this expected missing-handler inventory
-    # as real implementations land in Phases 3–4. Never register no-op stubs.
+    # Phase 3 implements the two local-record handlers. Keep the remaining
+    # readiness guard until real Phase 4 implementations land; never use stubs.
     diagnostics = validate_ontology(schema)
     assert [(item.code, item.layer, item.record_id) for item in diagnostics] == [
         ("ontology.unimplemented_invariant", DiagnosticLayer.ONTOLOGY, invariant_id)
-        for invariant_id in sorted(EXPECTED_INVARIANTS)
+        for invariant_id in sorted(
+            EXPECTED_INVARIANTS
+            - {"record_identifier_lexical", "required_text_non_blank"}
+        )
     ]
 
 

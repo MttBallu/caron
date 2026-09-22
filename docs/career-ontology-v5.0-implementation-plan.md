@@ -6,7 +6,7 @@ ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_3_local_validation
+current_phase: phase_4_realisation_invariants
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -161,9 +161,10 @@ claimed by Phase 2.
 
 ### 6.6 Development boundary and verification record
 
-The private `caron.ontology._career_ontology_v5_0_development()` factory returns
+At the Phase 2 checkpoint, the private
+`caron.ontology._career_ontology_v5_0_development()` factory returns
 `caron.career-model` / `5.0-dev`. The eight invariant identifiers are declared
-but have no registered handlers yet; `validate_ontology()` reports
+but have no registered handlers; `validate_ontology()` reports
 `ontology.unimplemented_invariant` for each, and `validate_candidate()`
 refuses acceptance. No no-op handlers are registered and no declarations are
 removed to bypass this boundary.
@@ -191,19 +192,70 @@ migration support, or package-version bump is claimed by this phase.
 
 ## 7. Phase 3 — Local record validation
 
-- [ ] Reject blank entity and relation identifiers.
-- [ ] Reject leading and trailing identifier whitespace.
-- [ ] Preserve separate entity and relation identifier namespaces.
-- [ ] Never infer kind or meaning by parsing identifiers.
-- [ ] Reject blank required labels, proposition content, and roles.
-- [ ] Preserve the validity of duplicate human labels.
-- [ ] Validate `Credential.awarded_in` as `YearMonth`.
-- [ ] Preserve unknown property, qualifier, endpoint, and reference checks.
-- [ ] Preserve duplicate property- and qualifier-name checks.
-- [ ] Freeze stable diagnostic codes for the new rules.
+- [x] Reject blank entity and relation identifiers.
+- [x] Reject leading and trailing identifier whitespace.
+- [x] Preserve separate entity and relation identifier namespaces.
+- [x] Never infer kind or meaning by parsing identifiers.
+- [x] Reject blank required labels, proposition content, and roles.
+- [x] Preserve the validity of duplicate human labels.
+- [x] Validate `Credential.awarded_in` as `YearMonth`.
+- [x] Preserve unknown property, qualifier, endpoint, and reference checks.
+- [x] Preserve duplicate property- and qualifier-name checks.
+- [x] Freeze stable diagnostic codes for the new rules.
 
-Acceptance gate: every entity and relation assertion is locally valid before
-graph-wide validation begins.
+Local-validation gate passed: every entity and relation assertion must pass
+the local stage before graph-wide validation begins.
+
+### 7.1 Implementation boundary and diagnostics
+
+`record_identifier_lexical` and `required_text_non_blank` now have real
+implementations in `caron/_invariants.py`. The internal registry records each
+handler's local-record or realisation stage; declarations remain callback-free.
+Handlers run only when declared, once in their stage. Lexical validation does
+not parse prefixes, trim identifiers, normalize text, or restrict open roles.
+Internal identifier whitespace remains valid, and text may have surrounding
+whitespace provided it contains a non-whitespace character.
+
+| Diagnostic code | Layer | Record / field | Meaning |
+|---|---|---|---|
+| `record.invalid_identifier` | local record | offending entity or relation id / `id` | Blank identifier or leading/trailing whitespace |
+| `record.blank_required_text` | local record | owning record id / property or qualifier name | Present, text-typed required value contains only whitespace |
+
+Missing fields and wrong value types retain their existing, distinct codes.
+Duplicate-id diagnostics retain their realisation layer and separate entity
+and relation namespaces, but are checked before graph validation. Endpoint,
+reference, unknown-field, duplicate-field, and local temporal checks are retained.
+
+`validate_candidate()` retains the schema-readiness gate, then checks ontology
+identity and local records before cardinalities, temporal containment, or
+realisation-stage handlers. Invalid candidates no longer accumulate downstream
+graph diagnostics from malformed records; those checks wait until local errors
+are resolved. The private `_validate_local_records()` helper returns diagnostics
+only and cannot construct a validated realisation.
+
+The development catalogue retains all eight declarations. Six handlers remain
+pending, so public candidate validation still refuses acceptance. Tests exercise
+the private local stage against the full `5.0-dev` catalogue without removing
+declarations or pretending it conforms to `5.0`. Separate test-only ontologies
+verify the staged acceptance machinery.
+
+### 7.2 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 349 tests
+(151 retained plus 198 added), formatting, Ruff, strict mypy, semantic/temporal
+examples, all existing viewers, and source/wheel builds.
+
+New tests cover all 13 concept labels, independent Proposition content, all
+three required role declarations, optional typed credential award months,
+reference closure and kinds, unknown vocabulary, duplicate fields and record
+identities, Unicode whitespace, opacity/case-sensitive identity, shared labels,
+and input preservation. Generative tests check arbitrary Unicode identifiers
+and required text. Stage tests prove local rejection prevents graph checks and
+handlers run exactly once in stage order. The schema-readiness tests now expect
+only the six genuinely unimplemented handlers.
+
+No package-version bump, public `5.0` acceptance, example port, serialization,
+or migration support is claimed. Phase 4 is next.
 
 ## 8. Phase 4 — Realisation-wide invariants
 

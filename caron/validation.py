@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from caron._invariants import INVARIANT_VALIDATORS
+from caron._invariants import INVARIANT_VALIDATORS, InvariantStage
 from caron.diagnostics import Diagnostic, DiagnosticLayer
 from caron.entities import Entity, EntityRef, PropertyValue
 from caron.ontology import (
@@ -354,6 +354,38 @@ def validate_candidate(
             )
         )
 
+    diagnostics.extend(_validate_local_records(ontology, candidate))
+    if diagnostics:
+        return Rejected(tuple(diagnostics))
+
+    diagnostics.extend(
+        _validate_relation_requirements(
+            ontology, candidate.entities, candidate.relations
+        )
+    )
+    diagnostics.extend(
+        _validate_temporal_containment(candidate.entities, candidate.relations)
+    )
+    diagnostics.extend(
+        _validate_invariants(ontology, candidate, InvariantStage.REALISATION)
+    )
+
+    if diagnostics:
+        return Rejected(tuple(diagnostics))
+    return Accepted(ValidatedRealisation._from_candidate(ontology, candidate))
+
+
+def _validate_local_records(
+    ontology: OntologySchema, candidate: RealisationCandidate
+) -> tuple[Diagnostic, ...]:
+    """Diagnose record shape, identity, and references without accepting a graph.
+
+    This private stage also supports isolated checks against an incomplete
+    development schema. An empty result is not realisation conformance:
+    only ``validate_candidate`` can produce a validated value.
+    """
+
+    diagnostics: list[Diagnostic] = []
     entity_ids = tuple(entity.id for entity in candidate.entities)
     relation_ids = tuple(relation.id for relation in candidate.relations)
     entity_by_id = {entity.id: entity for entity in candidate.entities}
@@ -383,21 +415,22 @@ def validate_candidate(
         diagnostics.extend(_validate_relation(ontology, relation, entity_by_id))
 
     diagnostics.extend(
-        _validate_relation_requirements(
-            ontology, candidate.entities, candidate.relations
-        )
+        _validate_invariants(ontology, candidate, InvariantStage.LOCAL_RECORD)
     )
-    diagnostics.extend(
-        _validate_temporal_containment(candidate.entities, candidate.relations)
-    )
-    for invariant in ontology.invariants:
-        invariant_validator = INVARIANT_VALIDATORS.get(invariant.id)
-        if invariant_validator is not None:
-            diagnostics.extend(invariant_validator(ontology, candidate))
+    return tuple(diagnostics)
 
-    if diagnostics:
-        return Rejected(tuple(diagnostics))
-    return Accepted(ValidatedRealisation._from_candidate(ontology, candidate))
+
+def _validate_invariants(
+    ontology: OntologySchema,
+    candidate: RealisationCandidate,
+    stage: InvariantStage,
+) -> tuple[Diagnostic, ...]:
+    diagnostics: list[Diagnostic] = []
+    for invariant in ontology.invariants:
+        implementation = INVARIANT_VALIDATORS.get(invariant.id)
+        if implementation is not None and implementation.stage is stage:
+            diagnostics.extend(implementation.validator(ontology, candidate))
+    return tuple(diagnostics)
 
 
 def _validate_entity(
