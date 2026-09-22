@@ -250,8 +250,8 @@ No empty packages are created for future features. Structure should appear only 
 
 ## 9. Next executable increment
 
-After the proposed ontology `5.0` specification is reviewed and accepted, the
-next executable increment is its implementation as a new exact schema alongside
+Following M1-C acceptance of the ontology `5.0` specification, the next
+executable increment is its implementation as a new exact schema alongside
 preserved schemas `4` and `0.5`. That increment must add the complete concept,
 relation, qualifier, cardinality, graph-invariant, temporal, migration, and
 non-inference test surface required by the specification. The schema viewer

@@ -1,7 +1,8 @@
 ---
 kind: ontology_specification
-status: proposed_for_m1c_acceptance
+status: m1c_accepted
 date: 2026-09-21
+acceptance_date: 2026-09-22
 ontology_id: caron.career-model
 ontology_version: "5.0"
 concept_count: 13
@@ -13,7 +14,7 @@ executable_predecessors:
 decision_record: career-ontology-m1b-semantic-decisions.md
 implementation_status: not_implemented
 current_package_version: "0.1.0"
-next_gate: m1c_review_and_acceptance
+next_gate: ontology_5_0_implementation
 ---
 
 # Career Ontology 5.0 — Normative Specification
@@ -35,7 +36,7 @@ accepted in the
 
 The source authority order for this integration is:
 
-1. this specification, once accepted, for exact ontology `5.0` meaning;
+1. this accepted specification for exact ontology `5.0` meaning;
 2. M1-B for the semantic choices that produced it;
 3. the [M1-A reconciliation](career-ontology-m1a-reconciliation.md) for the
    classified lineage and gaps;
@@ -57,6 +58,9 @@ storage, query plans, visual layout, or interaction workflows.
 The current `caron` package remains version `0.1.0` and does not yet implement
 this ontology. A package must not expose `5.0` as an accepted schema until all
 ontology-conformance obligations in section 16.1 are implemented and tested.
+
+M1-C acceptance establishes the normative meaning and lineage of ontology
+`5.0`. It does not claim that any `caron` release implements that schema.
 
 The terms **MUST**, **MUST NOT**, **SHOULD**, and **MAY** express normative
 requirements in this document.
@@ -164,9 +168,10 @@ report this as `realisation.duplicate_relation_fact`.
 Identifiers remain the stable addresses used by witnesses, editing, and later
 storage contracts. They do not alter semantic fact equality.
 
-All entity and qualifier references MUST resolve to entities present in the
-same candidate and of an allowed kind. Unknown concepts, properties, relation
-kinds, qualifiers, or value kinds make a candidate invalid.
+All relation endpoint references, entity-property references, and qualifier
+references MUST resolve to entities present in the same candidate and of an
+allowed kind. Unknown concepts, properties, relation kinds, qualifiers, or
+value kinds make a candidate invalid.
 
 One identified relation assertion represents one complete qualified fact.
 Qualifier legs MUST NOT be decomposed into independent assertions that could
@@ -201,9 +206,10 @@ kind validation even though they are not separate relation assertions.
 ### 6.3 `YearMonth`
 
 `YearMonth` identifies one calendar month in the proleptic Gregorian calendar.
-Its canonical lexical form is `YYYY-MM`, with a month from `01` through `12`.
-Year-only, day-level, time-of-day, and timezone values are not valid `YearMonth`
-values. Missing precision MUST NOT be replaced by an invented month.
+Its canonical lexical form is `YYYY-MM`, with a year from `0001` through
+`9999` and a month from `01` through `12`. Year-only, day-level, time-of-day,
+and timezone values are not valid `YearMonth` values. Missing precision MUST
+NOT be replaced by an invented month.
 
 Ontology `5.0` uses `YearMonth` both inside `TemporalExtent` and as the optional
 award month of a `Credential`. These uses share a value domain but do not imply
@@ -310,8 +316,8 @@ qualifiers are listed permits no qualifiers.
 Role qualifiers use relation-specific open vocabularies. Values such as
 `employee`, `doctoral_researcher`, `supervisor`, `student_member`, `funder`,
 `host_department`, or `experimental_facility` are examples, not closed enums.
-An implementation MAY offer authoring suggestions but MUST accept any nonempty
-role text.
+An implementation MAY offer authoring suggestions but MUST accept any role
+value satisfying the required `Text` domain.
 
 The optional organization on `participates_in` qualifies that participation.
 It does not replace an independent `organization_association` fact about the
@@ -423,8 +429,10 @@ placed in an explicit shared context.
 Multiple performers MAY be persons, collectives, or both. Multiple awarding
 organizations support jointly awarded credentials.
 
-Selective coverage MAY omit an unknown activity or credential. It MUST NOT
-relax the invariants of an included entity.
+A realisation need not be exhaustive. Omitting an unrepresented Activity or
+Credential does not violate cardinality, because cardinalities apply only to
+included entities. Once an entity is included, missing relations required by
+this section make the candidate invalid.
 
 ## 11. Global validity rules
 
@@ -569,7 +577,7 @@ An ontology `5.0` implementation MUST preserve at least these boundaries:
 18. Absence of an entity or relation is not explicit negation. Conclusions from
     absence additionally depend on declared realisation coverage.
 
-## 13. Derivation boundary and temporal query profile
+## 13. Derivation boundary and temporal-query compatibility
 
 ### 13.1 Ontology and realisation boundary
 
@@ -587,15 +595,20 @@ queries, selection modes, witness structures, or `GraphView`. Those constructs
 belong to separately versioned query and interaction contracts and do not
 determine the identity of the ontology schema.
 
-### 13.2 Separate temporal query profile
+### 13.2 Transitional temporal-query compatibility checklist
 
-The remainder of this section restates the accepted ontology `0.5` temporal
-query behavior as the current temporal query profile. It is normative for an
-implementation that claims that profile until M2A supersedes it, but it is not
-part of exact ontology `5.0` schema conformance. In particular, this profile
-does not make `GraphView` a universal ontology or query construct.
+The remainder of this section restates the query behavior accepted by temporal
+contract `0.2` for ontology `0.5`. It is a transitional compatibility checklist
+for packages exposing analogous temporal operations over ontology `5.0`, not a
+separately identified or claimable public profile. M2A owns the future named
+and versioned query contract.
 
-For this profile, the coverage statuses `selective`,
+These clauses are normative for the corresponding operations while they are
+advertised before M2A supersedes this checklist, but they are not part of exact
+ontology `5.0` schema conformance. In particular, they do not make `GraphView`
+a universal ontology or query construct.
+
+For this checklist, the coverage statuses `selective`,
 `complete_within_scope`, and `unknown` remain distinguishable. Results SHOULD
 carry witnesses sufficient to inspect the represented evidence and relation
 paths.
@@ -763,17 +776,19 @@ At minimum, conformance tests MUST exercise:
 - known, unknown, ongoing, nested, contradictory, and unconstrained temporal
   cases without wall-clock advancement or copied extents.
 
-### 16.2 Separate package and query-profile acceptance
+### 16.2 Separate package and query-feature acceptance
 
-A package release MAY additionally implement migrations, the temporal query
-profile in section 13.2, `GraphView`, and other query or interaction features.
-Each such contract has its own identity and acceptance gate. Implementing or
-omitting one does not change ontology `5.0` schema identity. A missing profile
-feature is a package capability gap, not ontology non-conformance, provided the
-package does not claim support for that profile.
+A package release MAY additionally implement migrations, the temporal
+operations summarized in section 13.2, `GraphView`, and other query or
+interaction features. Independently published contracts have their own
+identities and acceptance gates; section 13.2 remains a transitional checklist
+until M2A publishes such a contract. Implementing or omitting one of these
+features does not change ontology `5.0` schema identity. A missing feature is a
+package capability gap, not ontology non-conformance, provided the package does
+not advertise that feature.
 
-An implementation that claims the temporal query profile MUST additionally
-test:
+A package that exposes the temporal operations summarized in section 13.2 MUST
+additionally test:
 
 - entailed, possible, excluded, and unknown temporal classifications;
 - exact, bounded, and unknown covered-month results;
@@ -798,7 +813,18 @@ person-level experience evidence MUST additionally test that:
 - contextual coexistence is not reported as temporal order, causation, or
   transfer without the additional evidence required for that conclusion.
 
+### 16.3 M1-C acceptance record
+
+This specification was accepted on 2026-09-22 after review of its complete
+13-concept and 31-relation inventory, all M1-B decisions, the Model 4.2
+invariants, CQ1–CQ12 representational consequences, migration rules, layer
+boundaries, and conformance obligations.
+
+Acceptance makes this document the normative authority for ontology `5.0`.
+It does not change the current package version or executable schema support.
+
 The package release implementing ontology `5.0` is assigned separately from
 this specification. Until an implementing package passes ontology conformance
-and every feature-profile gate it advertises, the current executable
-authorities remain ontology versions `4` and `0.5` in `caron` `0.1.0`.
+and every additional contract or feature gate it advertises, the current
+executable authorities remain ontology versions `4` and `0.5` in `caron`
+`0.1.0`.
