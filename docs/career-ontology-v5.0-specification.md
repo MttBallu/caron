@@ -164,6 +164,10 @@ Its canonical lexical form is `YYYY-MM`, with a month from `01` through `12`.
 Year-only, day-level, time-of-day, and timezone values are not valid `YearMonth`
 values. Missing precision MUST NOT be replaced by an invented month.
 
+Ontology `5.0` uses `YearMonth` both inside `TemporalExtent` and as the optional
+award month of a `Credential`. These uses share a value domain but do not imply
+that a credential has a temporal extent.
+
 ### 6.4 `TemporalExtent`
 
 A `TemporalExtent` represents one connected, inclusive calendar envelope. It
@@ -186,8 +190,7 @@ envelope. Covered-month counts and temporal relations such as `before` or
 
 Every entity has exactly one required nonempty `label` text property. The
 additional properties below are exact; ontology `5.0` has no generic
-`Context.status`, independent `start` or `end`, or direct credential date
-property.
+`Context.status`, independent `start` or `end`, or day-level credential date.
 
 If future cases require non-temporal states such as planned, paused, or
 abandoned, their domain meaning must be specified separately. They MUST NOT be
@@ -208,7 +211,7 @@ proxy.
 | `Proposition` | Selective reified semantic content with one local context | required `content: text`; required `context: EntityReference[Context]` |
 | `Organization` | A reusable institutional entity | none |
 | `Place` | A reusable location relevant to a context | none |
-| `Credential` | One particular formally awarded qualification | none |
+| `Credential` | One particular formally awarded qualification | optional `awarded_in: YearMonth` (`0..1`) |
 
 `label` supports identification and presentation; it is not the entity's
 stable identity. Two entities MAY share a label and still remain distinct.
@@ -220,7 +223,9 @@ propositions.
 
 A `Credential` represents one particular award to one person. It is not a
 reusable credential type and is distinct from any diploma, thesis, certificate,
-or other artifact that evidences it.
+or other artifact that evidences it. `awarded_in` records the calendar month of
+the award itself when known. An absent value means that the award month is not
+asserted; it does not mean that the credential is pending or unawarded.
 
 ## 8. Schema families
 
@@ -362,7 +367,27 @@ relax the invariants of an included entity.
 4. A proposition's required `context` reference is its sole locality authority.
    Ontology `5.0` defines no duplicate proposition-context relation.
 
-### 11.2 `BearsOn` role and locality constraints
+### 11.2 Proposition locality constraints
+
+For every `aims_at(context, proposition)` assertion, the Proposition's required
+`context` property MUST reference that same Context:
+
+```text
+aims_at(context, proposition)
+requires proposition.context = context
+```
+
+An aim is therefore local to the Context whose purpose it expresses. Reusing
+one Proposition as the aim of a different Context would create a second local
+meaning and requires a distinct Proposition entity, even when its content is
+textually identical.
+
+`addresses`, `motivates`, `results_in`, `establishes`, `supports`, and
+`contradicts` MAY explicitly connect entities across contexts. Such a relation
+does not change the referenced Proposition's local context and MUST NOT be used
+to infer a second locality.
+
+### 11.3 `BearsOn` role and locality constraints
 
 For every `bears_on(source, target)` assertion:
 
@@ -379,7 +404,7 @@ infers one. An outcome in a broader context does not automatically bear on an
 aim in a narrower context. Sibling or otherwise incomparable proposition
 contexts are invalid for `bears_on`.
 
-### 11.3 Temporal consistency
+### 11.4 Temporal consistency
 
 Every `Context` and `Activity` has a semantically nonempty temporal occurrence,
 whether or not its boundaries are known.
@@ -421,8 +446,9 @@ that the fact holds throughout the context's entire extent. Activity-grounded
 relations receive temporal relevance through their source activity and its
 `occurs_in` path; they do not receive independent timestamps.
 
-`obtained_through` does not establish an exact credential award month from the
-context's extent.
+`obtained_through` does not establish a credential's `awarded_in` value from
+the Context's extent. Conversely, `awarded_in` does not constrain the full
+extent of an obtaining Context.
 
 ## 12. Required non-inferences
 
@@ -531,6 +557,7 @@ or relabels an accepted `4` or `0.5` realisation.
 | Ontology `4` Context `start` and `end` | Create a `TemporalExtent` only when source evidence establishes canonical months and a valid end state; never invent a month from a year |
 | Ontology `4` Context `status` | Drop; never translate free text into temporal continuation without dated evidence |
 | Ontology `0.5` Context `temporal_extent` | Preserve when valid under `5.0` |
+| Legacy Model 4.2 `Credential.awarded_at` exact date | MUST become `awarded_in` using the date's containing calendar month when that Credential is migrated; this deliberately coarsens day precision, which MUST NOT be presented as retained by `5.0` |
 | `part_of`, `performs`, `occurs_in`, `takes_input`, `produces`, `applies`, `draws_on`, proposition relations, and `occurs_at` | Preserve identifiers where the assertion's meaning and endpoints are unchanged |
 | compact `uses` with a `Technology` target | Replace with `uses_technology` |
 | compact `uses` with an `Artifact` target | Replace with `uses_artifact` |
@@ -538,6 +565,7 @@ or relabels an accepted `4` or `0.5` realisation.
 | compact `associated_with(Context, Organization)` | Replace with `organization_association(Organization, Context)` only when a nonempty association role is supported |
 | `exposed_to` and `learns` | Preserve their binary endpoints and required context qualifier |
 | Proposition `context` property | Preserve as the sole locality authority |
+| `aims_at` whose target Proposition references another Context | Reject with a migration diagnostic; do not rewrite the Proposition locality or clone the Proposition without source evidence |
 | New Model 4.2 concepts and relations | Add only from source evidence; never infer them merely to make the target candidate complete |
 
 Stable entity and relation assertion identifiers SHOULD be preserved when the
@@ -579,7 +607,8 @@ An implementation conforms to ontology `5.0` only if it:
 4. enforces stable nonempty record identifiers and local structural closure;
 5. enforces all activity and credential cardinalities;
 6. enforces context and organization acyclicity;
-7. enforces all `bears_on` role and contextual-locality constraints;
+7. enforces `aims_at` locality and all `bears_on` role and contextual-locality
+   constraints;
 8. implements the complete month-level `TemporalExtent` value contract and
    transitive temporal consistency rules;
 9. preserves every required non-inference in section 12;
@@ -600,6 +629,10 @@ At minimum, conformance tests MUST exercise:
 - Language in exposure, learning, activity use, and native-language facts;
 - production versus modification and input versus use;
 - one valid single-awarder and one valid joint-awarder credential;
+- known and absent Credential `awarded_in` values, without inference from an
+  obtaining Context;
+- deterministic month-level migration of a legacy exact credential award date;
+- valid same-context `aims_at` and invalid mismatched Proposition locality;
 - proposition locality and exact `bears_on` evidence across equal and nested
   contexts, plus invalid sibling and reversed-context cases;
 - `Place` and `occurs_at` in a CV-oriented realisation;
