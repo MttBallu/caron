@@ -125,10 +125,22 @@ Ontology `5.0` is expressed using:
 - local cardinality requirements;
 - global graph and semantic invariants.
 
-A realisation entity has a stable nonempty identifier, exactly one concept
-kind, and the properties allowed for that concept. A relation assertion has a
-stable nonempty identifier, exactly one relation kind, one source reference,
-one target reference, and the qualifiers allowed for that relation kind.
+Schema identifiers are exact and case-sensitive. The concept kinds in section
+7 and the machine relation, property, and qualifier identifiers in sections 7
+and 9 are the normative vocabulary. Conceptual relation names and human labels
+are explanatory and are not alternative schema identifiers.
+
+Realisation record identifiers are opaque, case-sensitive strings. Each MUST
+contain at least one non-whitespace character and MUST NOT begin or end with
+whitespace. Ontology `5.0` assigns no required prefix or internal structure to
+an identifier: prefixes such as `person:` or `relation:` are authoring
+conventions, not semantic components. Implementations MUST compare the complete
+identifier and MUST NOT infer record kind or meaning by parsing it.
+
+A realisation entity has a stable identifier, exactly one concept kind, and
+the properties allowed for that concept. A relation assertion has a stable
+identifier, exactly one relation kind, one source reference, one target
+reference, and the qualifiers allowed for that relation kind.
 
 Entity identifiers MUST be unique within the entity namespace of one
 realisation. Relation assertion identifiers MUST be unique within the relation
@@ -217,8 +229,10 @@ envelope. Covered-month counts and temporal relations such as `before` or
 
 ## 7. Concept catalogue
 
-Every entity has exactly one required nonempty `label` text property. The
-additional properties below are exact; ontology `5.0` has no generic
+Every entity has exactly one required `label` property in the `Text` value
+domain. Ontology `5.0` deliberately adopts it as descriptive metadata needed
+for human-facing identification, CV production, authoring, and graph views.
+The additional properties below are exact; ontology `5.0` has no generic
 `Context.status`, independent `start` or `end`, or day-level credential date.
 
 If future cases require non-temporal states such as planned, paused, or
@@ -243,7 +257,10 @@ proxy.
 | `Credential` | One particular formally awarded qualification | optional `awarded_in: YearMonth` (`0..1`) |
 
 `label` supports identification and presentation; it is not the entity's
-stable identity. Two entities MAY share a label and still remain distinct.
+stable identity and does not participate in relation-fact equality, endpoint
+typing, or semantic inference. Two entities MAY share a label and still remain
+distinct. A Proposition's label is not a substitute for its required
+substantive `content`.
 
 A `Proposition` is used selectively for content that participates in an
 intentional, outcome, epistemic, or explanatory structure. Ordinary structural
@@ -320,6 +337,29 @@ or temporal meaning for this relation.
 Practical use remains activity-grounded. Ontology `5.0` has no primitive
 `Person uses Technology` relation. Cross-context histories are derived by
 following shared reusable entities through activities, contexts, and agents.
+
+Exposure, learning, and activity-grounded mobilization remain distinct. An
+`exposed_to` fact records a weak encounter without by itself claiming stronger
+learning. A `learns` fact conceptually presupposes an encounter, but validation
+neither requires nor materializes a redundant `exposed_to` fact. Whether a
+broader query for encountered resources also uses `learns` as evidence belongs
+to the M2A query contract, which must distinguish asserted exposure from
+learning evidence.
+
+Learning and activity-grounded mobilization are independent and may occur
+without each other, repeatedly, or in the same Context. This applies to
+Technology with `uses_technology`, Method with `applies` or `draws_on`, Subject
+with `draws_on`, and Language with `uses_language`. `applies` states operational
+use of a Method; `draws_on` states conceptual or intellectual reliance. Neither
+is a weaker spelling of the other.
+
+The path from `performs(Person, Activity)` through an activity-resource
+relation may support a later query result about the Person. Ontology `5.0`
+licenses the path as evidence but does not create a positive
+Person-to-resource fact. Witness requirements for such a result belong to the
+M2A query contract. In particular, an activity with multiple performers does
+not by itself state that every performer personally used, applied, or drew on
+every resource attached to that activity.
 
 ### 9.3 Artifact roles
 
@@ -492,28 +532,41 @@ An ontology `5.0` implementation MUST preserve at least these boundaries:
    `performs`, does not imply personal performance or personal production.
 4. `organization_association` does not imply a person's employment or
    participation through that organization.
-5. `exposed_to` does not imply `learns`, practical use, retention, or mastery.
-6. `learns` does not imply first acquisition, permanent retention, mastery, or
-   a current expertise level.
-7. `uses_language` does not imply `native_language`, and `native_language` does
-   not imply contextual language use.
-8. `uses_artifact` does not imply `takes_input`; `takes_input` does not imply
+5. `exposed_to` does not imply `learns`, activity-grounded mobilization,
+   retention, or mastery.
+6. `learns` does not imply first acquisition, permanent retention, mastery, a
+   current expertise level, `uses_technology`, `uses_language`, `applies`, or
+   `draws_on`.
+7. `uses_technology`, `uses_language`, `applies`, and `draws_on` do not by
+   themselves imply `learns` or materialize an `exposed_to` fact for any
+   Person. Combining one of them with `performs` may support a witnessed query
+   result, but not a new positive Person-to-resource assertion.
+8. `applies` does not imply `draws_on`, and `draws_on` does not imply
+   `applies`, even when both target the same Method.
+9. Coexistence of learning and mobilization in one Context does not establish
+   which came first or that either caused the other. Such ordering requires
+   temporal evidence. An explicit `results_in` Proposition may record a stated
+   learning outcome, but it does not infer a corresponding `learns` fact.
+10. `exposed_to` or `learns` targeting a Language, and `uses_language`, do not
+    imply `native_language`. `native_language` does not imply contextual
+    exposure, learning, or language use.
+11. `uses_artifact` does not imply `takes_input`; `takes_input` does not imply
    `modifies`; `modifies` does not imply `produces`.
-9. `supports` does not imply `establishes`; `contradicts` does not establish
+12. `supports` does not imply `establishes`; `contradicts` does not establish
    universal falsehood; `establishes` does not classify desirability or
    success.
-10. An activity occurring in a context does not automatically `addresses`
+13. An activity occurring in a context does not automatically `addresses`
     every aim of that context.
-11. An activity-mediated path from an aim to an outcome is only candidate
+14. An activity-mediated path from an aim to an outcome is only candidate
     evidence for purpose evaluation; exact CQ7 evidence requires explicit
     `bears_on`.
-12. `bears_on` does not classify achievement, failure, support, contradiction,
+15. `bears_on` does not classify achievement, failure, support, contradiction,
     polarity, desirability, or completeness.
-13. Temporal containment does not imply equality of extents, continuous work,
+16. Temporal containment does not imply equality of extents, continuous work,
     effort, or active duration.
-14. Shared reusable identity permits a history to be queried; it does not
+17. Shared reusable identity permits a history to be queried; it does not
     assert a primitive `Experience`, `Transfer`, `Ability`, or `Capability`.
-15. Absence of an entity or relation is not explicit negation. Conclusions from
+18. Absence of an entity or relation is not explicit negation. Conclusions from
     absence additionally depend on declared realisation coverage.
 
 ## 13. Derivation boundary and temporal query profile
@@ -663,7 +716,8 @@ An implementation conforms to ontology `5.0` only if it:
 1. exposes the exact ontology identity `caron.career-model` / `5.0`;
 2. implements all 13 concept kinds and their exact property definitions;
 3. implements all 31 relation kinds, endpoint unions, and qualifier rules;
-4. enforces stable nonempty record identifiers and local structural closure;
+4. enforces the record-identifier lexical rules, stable unique identifiers,
+   and local structural closure;
 5. enforces semantic relation-fact uniqueness independently of relation record
    identifiers;
 6. enforces all activity and credential cardinalities;
@@ -684,12 +738,20 @@ MAY publish implementation-coverage records. They MUST NOT claim the accepted
 
 At minimum, conformance tests MUST exercise:
 
+- invalid blank and boundary-whitespace entity and relation identifiers;
+- valid duplicate human labels on independently identified entities;
 - personal and collective performance without invalid attribution;
 - duplicate semantic relation facts with different record identifiers,
   including equivalent qualifier mappings presented in different orders;
 - participation with and without an organization qualifier;
 - collective membership and organization association roles;
 - Language in exposure, learning, activity use, and native-language facts;
+- exposure without learning and learning without a redundant exposure fact;
+- learning without activity-grounded mobilization, and mobilization without
+  learning, for Technology, Method, Subject, and Language targets;
+- independent `applies` and `draws_on` facts for the same Method;
+- same-Context learning and mobilization without materialized ordering,
+  causation, or Person-to-resource facts;
 - production versus modification and input versus use;
 - one valid single-awarder and one valid joint-awarder credential;
 - known and absent Credential `awarded_in` values, without inference from an
@@ -723,6 +785,18 @@ A package that claims migration support to ontology `5.0` MUST additionally
 test deterministic month-level migration of legacy exact credential award
 dates and explicit diagnostics for imprecise dates, missing required roles,
 and duplicate semantic relation facts.
+
+A later M2A query profile that claims reusable-resource histories or
+person-level experience evidence MUST additionally test that:
+
+- each result preserves whether its evidence is `exposed_to`, `learns`,
+  `uses_technology`, `uses_language`, `applies`, or `draws_on`;
+- a person-level activity result retains its `performs` and activity-resource
+  witnesses rather than materializing a Person-to-resource ontology fact;
+- multiple performers are not flattened into unwitnessed individual resource
+  attribution; and
+- contextual coexistence is not reported as temporal order, causation, or
+  transfer without the additional evidence required for that conclusion.
 
 The package release implementing ontology `5.0` is assigned separately from
 this specification. Until an implementing package passes ontology conformance
