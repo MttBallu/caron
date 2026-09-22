@@ -1,21 +1,14 @@
-"""Executable tour of the semantic spine currently implemented by ``caron``.
+"""Executable tour of the ontology 5.0 semantic spine.
 
 Run from the project root with::
 
-    uv run python examples/semantic_spine.py
+    uv run python -m examples.semantic_spine
 
-At this stage, the package can:
-
-1. expose and inspect an explicit ontology schema;
-2. represent career entities and relation assertions as immutable records;
-3. keep invalid input representable as a ``RealisationCandidate``;
-4. validate a candidate and return structured diagnostics;
-5. produce an immutable ``ValidatedRealisation`` after successful validation;
-6. support direct reads over that validated value.
-
-This Model 4 example stops at direct validated reads. The separate temporal
-example exercises the v0.5 query and ``GraphView`` boundary. Serialization and
-narrative answer construction remain outside both examples.
+The example is a selective career graph, not a complete career record. It
+demonstrates every ontology 5.0 concept kind, typed properties, identified
+relation assertions, the candidate-to-validated boundary, and direct reads.
+The example targets the accepted exact ``5.0`` identity. Renderer JSON,
+persistence, and narrative answer construction remain separate concerns.
 """
 
 from dataclasses import replace
@@ -23,9 +16,14 @@ from dataclasses import replace
 from caron import (
     ACTIVITY,
     ARTIFACT,
+    COLLECTIVE,
     CONTEXT,
+    CREDENTIAL,
+    LANGUAGE,
     METHOD,
+    ORGANIZATION,
     PERSON,
+    PLACE,
     PROPOSITION,
     SUBJECT,
     TECHNOLOGY,
@@ -39,31 +37,76 @@ from caron import (
     RealisationCandidate,
     Rejected,
     RelationAssertion,
+    TemporalExtent,
     ValidatedRealisation,
-    model4_ontology,
+    YearMonth,
     validate_candidate,
 )
+from caron.ontology import career_ontology_v5_0
 
 
-def labelled(entity_id: str, kind: str, label: str) -> Entity:
-    """Create an entity having only the common required label property."""
+def labelled(
+    entity_id: str,
+    kind: str,
+    label: str,
+    *properties: Property,
+) -> Entity:
+    """Create a labelled entity with optional additional typed properties."""
 
-    return Entity(entity_id, kind, (Property("label", label),))
+    return Entity(entity_id, kind, (Property("label", label), *properties))
+
+
+def assertion(
+    relation_id: str,
+    kind: str,
+    source_id: str,
+    target_id: str,
+    *qualifiers: Qualifier,
+) -> RelationAssertion:
+    """Create one identified positive relation fact."""
+
+    return RelationAssertion(
+        relation_id,
+        kind,
+        EntityRef(source_id),
+        EntityRef(target_id),
+        qualifiers,
+    )
+
+
+def _proposition(
+    entity_id: str,
+    label: str,
+    content: str,
+    context_id: str,
+) -> Entity:
+    return labelled(
+        entity_id,
+        PROPOSITION,
+        label,
+        Property("content", content),
+        Property("context", EntityRef(context_id)),
+    )
 
 
 def build_candidate() -> RealisationCandidate:
-    """Build a small but semantically varied career-model candidate."""
+    """Build a representative ontology 5.0 career candidate."""
 
-    ontology = model4_ontology()
+    ontology = career_ontology_v5_0()
 
     person = labelled("person:matteo", PERSON, "Mattéo")
-    context = Entity(
-        id="context:phd",
-        kind=CONTEXT,
-        properties=(
-            Property("label", "Nuclear-physics PhD"),
-            Property("start", 2022),
-            Property("status", "completed"),
+    collective = labelled(
+        "collective:gamma-analysis-team",
+        COLLECTIVE,
+        "Gamma-analysis team",
+    )
+    context = labelled(
+        "context:phd",
+        CONTEXT,
+        "Nuclear-physics PhD",
+        Property(
+            "temporal_extent",
+            TemporalExtent.closed("2022-10", "2025-10"),
         ),
     )
     activity = labelled(
@@ -78,6 +121,7 @@ def build_candidate() -> RealisationCandidate:
         SUBJECT,
         "Gamma spectroscopy",
     )
+    english = labelled("language:english", LANGUAGE, "English")
     spectrum = labelled(
         "artifact:coincidence-spectrum",
         ARTIFACT,
@@ -88,81 +132,149 @@ def build_candidate() -> RealisationCandidate:
         ARTIFACT,
         "Rb-90 discrepancy report",
     )
-    discrepancy = Entity(
-        id="proposition:rb90-discrepancy",
-        kind=PROPOSITION,
-        properties=(
-            Property("label", "Rb-90 cascade discrepancy"),
-            Property(
-                "content",
-                "The measured cascade intensity differs from evaluated data.",
-            ),
-            Property("context", EntityRef(context.id)),
-        ),
+    diploma = labelled(
+        "artifact:doctoral-diploma",
+        ARTIFACT,
+        "Doctoral diploma",
+    )
+    discrepancy = _proposition(
+        "proposition:rb90-discrepancy",
+        "Rb-90 cascade discrepancy",
+        "The measured cascade intensity differs from evaluated data.",
+        context.id,
+    )
+    cea = labelled("organization:cea", ORGANIZATION, "CEA")
+    university = labelled(
+        "organization:paris-saclay",
+        ORGANIZATION,
+        "Université Paris-Saclay",
+    )
+    saclay = labelled("place:saclay", PLACE, "Saclay")
+    doctorate = labelled(
+        "credential:doctorate",
+        CREDENTIAL,
+        "Doctorate in nuclear physics",
+        Property("awarded_in", YearMonth.parse("2025-10")),
     )
 
     relations = (
-        RelationAssertion(
+        assertion(
             "relation:participation",
             "participates_in",
-            EntityRef(person.id),
-            EntityRef(context.id),
-            (Qualifier("role", "doctoral researcher"),),
+            person.id,
+            context.id,
+            Qualifier("role", "doctoral researcher"),
+            Qualifier("organization", EntityRef(cea.id)),
         ),
-        RelationAssertion(
-            "relation:performs",
+        assertion(
+            "relation:collective-membership",
+            "collective_membership",
+            person.id,
+            collective.id,
+            Qualifier("context", EntityRef(context.id)),
+            Qualifier("role", "member"),
+        ),
+        assertion(
+            "relation:organization-association",
+            "organization_association",
+            cea.id,
+            context.id,
+            Qualifier("role", "host organization"),
+        ),
+        assertion("relation:occurs-at", "occurs_at", context.id, saclay.id),
+        assertion("relation:performs:person", "performs", person.id, activity.id),
+        assertion(
+            "relation:performs:collective",
             "performs",
-            EntityRef(person.id),
-            EntityRef(activity.id),
+            collective.id,
+            activity.id,
         ),
-        RelationAssertion(
-            "relation:occurs-in",
-            "occurs_in",
-            EntityRef(activity.id),
-            EntityRef(context.id),
-        ),
-        RelationAssertion(
+        assertion("relation:occurs-in", "occurs_in", activity.id, context.id),
+        assertion(
             "relation:uses-python",
-            "uses",
-            EntityRef(activity.id),
-            EntityRef(python.id),
+            "uses_technology",
+            activity.id,
+            python.id,
         ),
-        RelationAssertion(
+        assertion(
+            "relation:uses-spectrum",
+            "uses_artifact",
+            activity.id,
+            spectrum.id,
+        ),
+        assertion(
+            "relation:uses-english",
+            "uses_language",
+            activity.id,
+            english.id,
+        ),
+        assertion(
             "relation:applies-fitting",
             "applies",
-            EntityRef(activity.id),
-            EntityRef(peak_fitting.id),
+            activity.id,
+            peak_fitting.id,
         ),
-        RelationAssertion(
+        assertion(
             "relation:draws-on-spectroscopy",
             "draws_on",
-            EntityRef(activity.id),
-            EntityRef(spectroscopy.id),
+            activity.id,
+            spectroscopy.id,
         ),
-        RelationAssertion(
+        assertion(
             "relation:takes-spectrum",
             "takes_input",
-            EntityRef(activity.id),
-            EntityRef(spectrum.id),
+            activity.id,
+            spectrum.id,
         ),
-        RelationAssertion(
+        assertion(
             "relation:produces-report",
             "produces",
-            EntityRef(activity.id),
-            EntityRef(report.id),
+            activity.id,
+            report.id,
         ),
-        RelationAssertion(
+        assertion(
             "relation:establishes-discrepancy",
             "establishes",
-            EntityRef(activity.id),
-            EntityRef(discrepancy.id),
+            activity.id,
+            discrepancy.id,
         ),
-        RelationAssertion(
+        assertion(
             "relation:learns-fitting",
             "learns",
-            EntityRef(person.id),
-            EntityRef(peak_fitting.id),
-            (Qualifier("context", EntityRef(context.id)),),
+            person.id,
+            peak_fitting.id,
+            Qualifier("context", EntityRef(context.id)),
+        ),
+        assertion(
+            "relation:exposed-to-english",
+            "exposed_to",
+            person.id,
+            english.id,
+            Qualifier("context", EntityRef(context.id)),
+        ),
+        assertion(
+            "relation:awarded-to",
+            "awarded_to",
+            doctorate.id,
+            person.id,
+        ),
+        assertion(
+            "relation:awarded-by",
+            "awarded_by",
+            doctorate.id,
+            university.id,
+        ),
+        assertion(
+            "relation:obtained-through",
+            "obtained_through",
+            doctorate.id,
+            context.id,
+        ),
+        assertion(
+            "relation:evidenced-by",
+            "evidenced_by",
+            doctorate.id,
+            diploma.id,
         ),
     )
 
@@ -172,19 +284,26 @@ def build_candidate() -> RealisationCandidate:
         ontology_version=ontology.version,
         entities=(
             person,
+            collective,
             context,
             activity,
             python,
             peak_fitting,
             spectroscopy,
+            english,
             spectrum,
             report,
+            diploma,
             discrepancy,
+            cea,
+            university,
+            saclay,
+            doctorate,
         ),
         relations=relations,
         coverage=Coverage(
             CoverageStatus.SELECTIVE,
-            "One PhD activity and the evidence directly attached to it",
+            "One PhD activity, its resources and evidence, and its doctorate award",
         ),
     )
 
@@ -192,7 +311,7 @@ def build_candidate() -> RealisationCandidate:
 def validate_example(candidate: RealisationCandidate) -> ValidatedRealisation:
     """Cross the explicit candidate-to-validated boundary."""
 
-    match validate_candidate(model4_ontology(), candidate):
+    match validate_candidate(career_ontology_v5_0(), candidate):
         case Accepted(realisation):
             return realisation
         case Rejected(diagnostics):
@@ -205,7 +324,7 @@ def validate_example(candidate: RealisationCandidate) -> ValidatedRealisation:
 def show_schema() -> None:
     """Demonstrate that model rules are data that can be inspected."""
 
-    ontology = model4_ontology()
+    ontology = career_ontology_v5_0()
     learns = ontology.relation("learns")
     assert learns is not None
 
@@ -213,6 +332,7 @@ def show_schema() -> None:
     print(f"  identity: {ontology.id} version {ontology.version}")
     print(f"  concepts: {len(ontology.concepts)}")
     print(f"  relation kinds: {len(ontology.relations)}")
+    print(f"  global invariants: {len(ontology.invariants)}")
     print(f"  learns targets: {', '.join(sorted(learns.target_kinds))}")
     print()
 
@@ -247,7 +367,7 @@ def show_rejection(candidate: RealisationCandidate) -> None:
     )
 
     print("INVALID CANDIDATE")
-    match validate_candidate(model4_ontology(), invalid):
+    match validate_candidate(career_ontology_v5_0(), invalid):
         case Accepted(_):
             raise AssertionError("An ungrounded activity must not be accepted")
         case Rejected(diagnostics):
@@ -265,9 +385,9 @@ def main() -> None:
     show_direct_reads(validate_example(candidate))
     show_rejection(candidate)
 
-    print("THIS MODEL 4 EXAMPLE STOPS AT DIRECT VALIDATED READS")
+    print("ONTOLOGY 5.0 EXAMPLE")
     print("  temporal queries and GraphView: examples.temporal_queries")
-    print("  serialization, storage, narrative answers, CLI: deferred")
+    print("  persistence, narrative answers, CLI: deferred")
 
 
 if __name__ == "__main__":

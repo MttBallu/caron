@@ -160,6 +160,23 @@
       line-height: 1.45;
     }
 
+    .inventory {
+      margin-top: 1.2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 0.9rem;
+    }
+
+    .inventory summary {
+      color: #334155;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .inventory .card-list { margin-top: 0.65rem; }
+
     .empty-state {
       margin: 3rem 0;
       color: var(--muted);
@@ -315,6 +332,16 @@
         <div class="filter-list" id="relation-filters"></div>
       </section>
 
+      <details class="inventory" open>
+        <summary id="requirement-inventory-title">Cardinality requirements</summary>
+        <div class="card-list" id="requirement-inventory"></div>
+      </details>
+
+      <details class="inventory" open>
+        <summary id="invariant-inventory-title">Global invariants</summary>
+        <div class="card-list" id="invariant-inventory"></div>
+      </details>
+
       <div class="legend">
         Each edge is an admissible source/target type pair. A thicker blue edge
         carries a cardinality requirement for that endpoint pair.
@@ -352,7 +379,8 @@
       `${graphData.metadata.concept_count} concepts · ` +
       `${graphData.metadata.relation_rule_count} relation rules · ` +
       `${graphData.metadata.expanded_edge_count} admissible endpoint pairs · ` +
-      `${graphData.metadata.requirement_count} cardinality requirements`;
+      `${graphData.metadata.requirement_count} cardinality requirements · ` +
+      `${graphData.metadata.invariant_count} global invariants`;
 
     if (typeof cytoscape === "undefined") {
       errorBanner.style.display = "block";
@@ -537,10 +565,19 @@
         element(
           "div",
           "card-detail",
-          `Each ${requirement.concept} requires ${requirement.display} ${requirement.relation_kind} relation(s) at this endpoint.`
+          `${requirement.endpoint}: ${requirement.display} ${requirement.relation_kind} relation(s) for each ${requirement.concept}.`
         )
       );
       return card;
+    }
+
+    function invariantCard(invariant) {
+      return signatureCard("global invariant", invariant.id);
+    }
+
+    function populateInventory(containerId, items, cardFactory) {
+      const container = document.getElementById(containerId);
+      items.forEach(item => container.appendChild(cardFactory(item)));
     }
 
     function connectionButton(edge, nodeId) {
@@ -654,6 +691,13 @@
     [...selectedRelations]
       .sort()
       .forEach(kind => addFilter(relationFilters, kind, selectedRelations));
+
+    document.getElementById("requirement-inventory-title").textContent =
+      `Cardinality requirements (${graphData.requirements.length})`;
+    document.getElementById("invariant-inventory-title").textContent =
+      `Global invariants (${graphData.invariants.length})`;
+    populateInventory("requirement-inventory", graphData.requirements, requirementCard);
+    populateInventory("invariant-inventory", graphData.invariants, invariantCard);
 
     cy.on("tap", "node", event => {
       focusNode(event.target);

@@ -1,7 +1,7 @@
 ---
 kind: package_boundary_note
-status: accepted_and_implemented_through_visualization_projections
-architecture_contract: 0.2
+status: accepted_and_implemented_through_ontology_5_0_final_acceptance
+architecture_contract: 0.3
 ---
 
 # Package Boundary Decisions
@@ -36,6 +36,14 @@ decisions:
   realisation_visualization_input: GraphView rather than ValidatedRealisation
   schema_visualization_input: OntologySchema
   visualization_projection: renderer-specific JSON outside semantic contracts
+  maintained_ontology_generation: "5.0"
+  runtime_identity: "5.0"
+  public_schema_factory: career_ontology_v5_0
+  historical_executable_predecessors:
+    - "4"
+    - "0.5"
+  compatibility_guarantees: no earlier than caron 1.0
+  migration: explicitly deferred
 ```
 
 ## Accepted and implemented retrieval boundary
@@ -64,6 +72,35 @@ The internal algebra is retained because its joins, optional matches, unions,
 ordering, and witness propagation have accepted regression value. It is not a
 public query-plan API. Candidate/validated plan forms and schema-aware plan
 diagnostics remain a later contract.
+
+## Runtime and release boundary
+
+Ontology `5.0` is the current maintained executable model. The complete schema
+is available through the public `career_ontology_v5_0()` factory and carries
+the exact identity `caron.career-model` / `5.0` after the Phase 10 conformance
+gate.
+
+Executable ontology versions `4` and `0.5` are historical predecessors. Their
+meaning remains documented, but their factories, compact vocabulary, and
+runtime compatibility surface are not part of `caron` `0.2.0`. The package
+does not relabel or silently accept their realisations.
+
+The package remains experimental before `1.0`. Breaking changes are permitted
+through the `0.x` series, and stable compatibility guarantees begin no earlier
+than `caron` `1.0`. Migration is a separately accepted capability and is
+explicitly absent from `0.2.0`.
+
+## Public surface boundary
+
+The root package exports the records and enums required to construct, inspect,
+validate, and query semantic data: ontology meta-model records and concept
+constants; entity, relation, realisation, and temporal records; diagnostics and
+validation results; typed temporal queries; and renderer-independent graph
+views with bindings and witnesses.
+
+The root package exports the exact ontology `5.0` factory. It does not export
+invariant registries or handlers, query-algebra plans or evaluators, renderer
+adapters, storage or serialization contracts, or migration machinery.
 
 ## Boundary rule
 

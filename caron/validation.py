@@ -2,17 +2,17 @@
 
 from dataclasses import dataclass
 
+from caron._career_v5_invariants import (
+    semantic_relation_key,
+    temporal_consistency_diagnostics,
+)
+from caron._invariants import INVARIANT_VALIDATORS, InvariantStage
 from caron.diagnostics import Diagnostic, DiagnosticLayer
 from caron.entities import Entity, EntityRef, PropertyValue
-from caron.ontology import (
-    CONTEXT,
-    EndpointPosition,
-    OntologySchema,
-    ValueKind,
-)
+from caron.ontology import EndpointPosition, OntologySchema, ValueKind
 from caron.realisations import RealisationCandidate, ValidatedRealisation
 from caron.relations import QualifierValue, RelationAssertion
-from caron.temporal import KnownEnd, OngoingAsOf, TemporalExtent, UnknownEnd
+from caron.temporal import KnownEnd, OngoingAsOf, TemporalExtent, UnknownEnd, YearMonth
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +46,8 @@ def _value_matches_kind(value: PropertyValue | QualifierValue, kind: ValueKind) 
             return isinstance(value, int) and not isinstance(value, bool)
         case ValueKind.ENTITY_REFERENCE:
             return isinstance(value, EntityRef)
+        case ValueKind.YEAR_MONTH:
+            return isinstance(value, YearMonth)
         case ValueKind.TEMPORAL_EXTENT:
             return isinstance(value, TemporalExtent)
 
@@ -58,6 +60,7 @@ def validate_ontology(ontology: OntologySchema) -> tuple[Diagnostic, ...]:
     relation_kinds = tuple(relation.kind for relation in ontology.relations)
     concept_id_set = frozenset(concept_ids)
     relation_kind_set = frozenset(relation_kinds)
+    invariant_ids = tuple(invariant.id for invariant in ontology.invariants)
 
     for concept_id in sorted(_duplicate_values(concept_ids)):
         diagnostics.append(
@@ -76,6 +79,28 @@ def validate_ontology(ontology: OntologySchema) -> tuple[Diagnostic, ...]:
                 layer=DiagnosticLayer.ONTOLOGY,
                 message=f"Relation {relation_kind!r} is defined more than once.",
                 record_id=relation_kind,
+            )
+        )
+
+    for invariant_id in sorted(_duplicate_values(invariant_ids)):
+        diagnostics.append(
+            Diagnostic(
+                code="ontology.duplicate_invariant",
+                layer=DiagnosticLayer.ONTOLOGY,
+                message=f"Invariant {invariant_id!r} is declared more than once.",
+                record_id=invariant_id,
+            )
+        )
+
+    for invariant_id in sorted(set(invariant_ids) - INVARIANT_VALIDATORS.keys()):
+        diagnostics.append(
+            Diagnostic(
+                code="ontology.unimplemented_invariant",
+                layer=DiagnosticLayer.ONTOLOGY,
+                message=(
+                    f"Invariant {invariant_id!r} has no registered implementation."
+                ),
+                record_id=invariant_id,
             )
         )
 
@@ -328,6 +353,40 @@ def validate_candidate(
             )
         )
 
+    diagnostics.extend(_validate_local_records(ontology, candidate))
+    if diagnostics:
+        return Rejected(tuple(diagnostics))
+
+    diagnostics.extend(
+        _validate_relation_requirements(
+            ontology, candidate.entities, candidate.relations
+        )
+    )
+    declared_invariants = frozenset(item.id for item in ontology.invariants)
+    if "temporal_consistency" not in declared_invariants:
+        diagnostics.extend(
+            _validate_temporal_containment(candidate.entities, candidate.relations)
+        )
+    diagnostics.extend(
+        _validate_invariants(ontology, candidate, InvariantStage.REALISATION)
+    )
+
+    if diagnostics:
+        return Rejected(tuple(diagnostics))
+    return Accepted(ValidatedRealisation._from_candidate(ontology, candidate))
+
+
+def _validate_local_records(
+    ontology: OntologySchema, candidate: RealisationCandidate
+) -> tuple[Diagnostic, ...]:
+    """Diagnose record shape, identity, and references without accepting a graph.
+
+    This private stage also supports isolated checks against an incomplete
+    test schema. An empty result is not realisation conformance:
+    only ``validate_candidate`` can produce a validated value.
+    """
+
+    diagnostics: list[Diagnostic] = []
     entity_ids = tuple(entity.id for entity in candidate.entities)
     relation_ids = tuple(relation.id for relation in candidate.relations)
     entity_by_id = {entity.id: entity for entity in candidate.entities}
@@ -357,17 +416,22 @@ def validate_candidate(
         diagnostics.extend(_validate_relation(ontology, relation, entity_by_id))
 
     diagnostics.extend(
-        _validate_relation_requirements(
-            ontology, candidate.entities, candidate.relations
-        )
+        _validate_invariants(ontology, candidate, InvariantStage.LOCAL_RECORD)
     )
-    diagnostics.extend(
-        _validate_temporal_containment(candidate.entities, candidate.relations)
-    )
+    return tuple(diagnostics)
 
-    if diagnostics:
-        return Rejected(tuple(diagnostics))
-    return Accepted(ValidatedRealisation._from_candidate(ontology, candidate))
+
+def _validate_invariants(
+    ontology: OntologySchema,
+    candidate: RealisationCandidate,
+    stage: InvariantStage,
+) -> tuple[Diagnostic, ...]:
+    diagnostics: list[Diagnostic] = []
+    for invariant in ontology.invariants:
+        implementation = INVARIANT_VALIDATORS.get(invariant.id)
+        if implementation is not None and implementation.stage is stage:
+            diagnostics.extend(implementation.validator(ontology, candidate))
+    return tuple(diagnostics)
 
 
 def _validate_entity(
@@ -644,15 +708,17 @@ def _validate_relation_requirements(
     diagnostics: list[Diagnostic] = []
     for requirement in ontology.requirements:
         for entity in (item for item in entities if item.kind == requirement.concept):
-            count = sum(
-                relation.kind == requirement.relation_kind
+            matching_facts = {
+                semantic_relation_key(relation)
+                for relation in relations
+                if relation.kind == requirement.relation_kind
                 and (
                     relation.source.entity_id == entity.id
                     if requirement.endpoint is EndpointPosition.SOURCE
                     else relation.target.entity_id == entity.id
                 )
-                for relation in relations
-            )
+            }
+            count = len(matching_facts)
             if count < requirement.minimum:
                 diagnostics.append(
                     Diagnostic(
@@ -688,114 +754,6 @@ def _validate_temporal_containment(
     entities: tuple[Entity, ...],
     relations: tuple[RelationAssertion, ...],
 ) -> tuple[Diagnostic, ...]:
-    """Reject context occurrences that cannot fit in dated ancestors."""
+    """Preserve temporal validation for legacy schemas during the transition."""
 
-    context_by_id = {entity.id: entity for entity in entities if entity.kind == CONTEXT}
-    parent_edges: dict[str, list[tuple[str, str]]] = {}
-    for relation in relations:
-        if relation.kind != "part_of":
-            continue
-        if (
-            relation.source.entity_id not in context_by_id
-            or relation.target.entity_id not in context_by_id
-        ):
-            continue
-        parent_edges.setdefault(relation.source.entity_id, []).append(
-            (relation.target.entity_id, relation.id)
-        )
-
-    diagnostics: list[Diagnostic] = []
-    for child in context_by_id.values():
-        ancestors = _ancestor_paths(child.id, parent_edges)
-        dated_ancestors = tuple(
-            (ancestor_id, relation_path, ancestor_extent)
-            for ancestor_id, relation_path in ancestors
-            if isinstance(
-                ancestor_extent := context_by_id[ancestor_id].property(
-                    "temporal_extent"
-                ),
-                TemporalExtent,
-            )
-        )
-        lower_bound = max(
-            (extent.start for _, _, extent in dated_ancestors),
-            default=None,
-        )
-        upper_bound = min(
-            (
-                extent.end.month
-                for _, _, extent in dated_ancestors
-                if isinstance(extent.end, KnownEnd)
-            ),
-            default=None,
-        )
-        if (
-            lower_bound is not None
-            and upper_bound is not None
-            and lower_bound > upper_bound
-        ):
-            diagnostics.append(
-                Diagnostic(
-                    code="realisation.temporal_containment_impossible",
-                    layer=DiagnosticLayer.REALISATION,
-                    message=(
-                        f"Dated ancestors of context {child.id!r} have no common "
-                        "month in which its nonempty occurrence can fit."
-                    ),
-                    record_id=child.id,
-                    field="temporal_extent",
-                )
-            )
-            continue
-
-        child_extent = child.property("temporal_extent")
-        if not isinstance(child_extent, TemporalExtent):
-            continue
-        for ancestor_id, relation_path, ancestor_extent in dated_ancestors:
-            if _can_be_contained(child_extent, ancestor_extent):
-                continue
-            diagnostics.append(
-                Diagnostic(
-                    code="realisation.temporal_containment_impossible",
-                    layer=DiagnosticLayer.REALISATION,
-                    message=(
-                        f"Context {child.id!r} cannot occur within dated ancestor "
-                        f"{ancestor_id!r} along relations {relation_path!r}."
-                    ),
-                    record_id=child.id,
-                    field="temporal_extent",
-                )
-            )
-    return tuple(diagnostics)
-
-
-def _ancestor_paths(
-    child_id: str,
-    parent_edges: dict[str, list[tuple[str, str]]],
-) -> tuple[tuple[str, tuple[str, ...]], ...]:
-    discovered: list[tuple[str, tuple[str, ...]]] = []
-    pending: list[tuple[str, tuple[str, ...]]] = [(child_id, ())]
-    visited = {child_id}
-    while pending:
-        current_id, path = pending.pop()
-        for parent_id, relation_id in parent_edges.get(current_id, []):
-            if parent_id in visited:
-                continue
-            visited.add(parent_id)
-            parent_path = (*path, relation_id)
-            discovered.append((parent_id, parent_path))
-            pending.append((parent_id, parent_path))
-    return tuple(discovered)
-
-
-def _can_be_contained(child: TemporalExtent, parent: TemporalExtent) -> bool:
-    if child.start < parent.start:
-        return False
-    if not isinstance(parent.end, KnownEnd):
-        return True
-    match child.end:
-        case KnownEnd(month) | OngoingAsOf(month):
-            child_minimum_end = month
-        case UnknownEnd():
-            child_minimum_end = child.start
-    return child_minimum_end <= parent.end.month
+    return temporal_consistency_diagnostics(entities, relations)

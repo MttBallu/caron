@@ -19,17 +19,17 @@ from caron import (
     ValidatedRealisation,
     before,
     covered_months,
-    model_v0_5_ontology,
     overlaps,
     select_activities_in_window,
     validate_candidate,
 )
-from examples.temporal_queries import build_candidate as temporal_candidate
-from tests.fixtures.minimal import labelled
+from caron.ontology import career_ontology_v5_0
+from tests.fixtures.temporal_v5 import temporal_v5_candidate
+from tests.fixtures.v5 import labelled
 
 
 def _realisation() -> ValidatedRealisation:
-    result = validate_candidate(model_v0_5_ontology(), temporal_candidate())
+    result = validate_candidate(career_ontology_v5_0(), temporal_v5_candidate())
     assert isinstance(result, Accepted)
     return result.realisation
 
@@ -70,6 +70,16 @@ def test_synthetic_count_retains_part_of_witness() -> None:
         EntityRef("context:phd"),
         "temporal_extent",
     ) in result.witness.properties
+
+
+def test_direct_temporal_witness_names_only_asserted_property() -> None:
+    result = covered_months(_realisation(), "context:alice-project")
+
+    assert result.witness.entities == (EntityRef("context:alice-project"),)
+    assert result.witness.relations == ()
+    assert result.witness.properties == (
+        (EntityRef("context:alice-project"), "temporal_extent"),
+    )
 
 
 def test_context_and_activity_order_are_entailed_through_composition() -> None:
@@ -127,7 +137,7 @@ def test_definite_window_selects_only_entailed_activity() -> None:
         "activity:analyse-alice-data",
     )
     assert {relation.kind for relation in view.relations} == {"occurs_in"}
-    assert view.ontology.version == "0.5"
+    assert view.ontology.version == "5.0"
 
 
 def test_possible_window_returns_partial_context_matches() -> None:
@@ -162,6 +172,27 @@ def test_parent_window_entails_nested_activity_match() -> None:
     assert all(relation.kind != "before" for relation in view.relations)
 
 
+def test_temporal_graph_view_only_projects_asserted_records() -> None:
+    realisation = _realisation()
+    view = select_activities_in_window(
+        realisation,
+        TemporalWindow.closed("2022-10", "2025-10"),
+    )
+
+    assert set(view.relations) <= set(realisation.relations)
+    assert set(view.entities) <= set(realisation.entities)
+    assert {relation.kind for relation in view.relations} == {
+        "occurs_in",
+        "part_of",
+    }
+    assert {relation.kind for relation in view.relations}.isdisjoint(
+        {"before", "overlaps"}
+    )
+    activity = view.entity("activity:build-synthetic-dataset")
+    assert activity is not None
+    assert activity.property("temporal_extent") is None
+
+
 def test_ongoing_observation_does_not_cap_activity_time() -> None:
     window = TemporalWindow.closed("2026-04", "2026-09")
 
@@ -184,7 +215,7 @@ def test_ongoing_observation_does_not_cap_activity_time() -> None:
 
 
 def test_unconstrained_activity_is_unknown_and_excluded_by_default() -> None:
-    candidate = temporal_candidate()
+    candidate = temporal_v5_candidate()
     context = labelled("context:undated", CONTEXT, "Undated work")
     activity = labelled("activity:undated", ACTIVITY, "Undated activity")
     performs = RelationAssertion(
@@ -204,7 +235,7 @@ def test_unconstrained_activity_is_unknown_and_excluded_by_default() -> None:
         entities=candidate.entities + (context, activity),
         relations=candidate.relations + (performs, occurs_in),
     )
-    validated = validate_candidate(model_v0_5_ontology(), extended)
+    validated = validate_candidate(career_ontology_v5_0(), extended)
     assert isinstance(validated, Accepted)
 
     default_view = select_activities_in_window(
@@ -240,7 +271,7 @@ def test_graph_view_is_immutable() -> None:
 
 
 def test_unknown_end_count_is_indeterminate() -> None:
-    candidate = temporal_candidate()
+    candidate = temporal_v5_candidate()
     context = labelled("context:open", CONTEXT, "Open-ended work")
     context = replace(
         context,
@@ -253,7 +284,7 @@ def test_unknown_end_count_is_indeterminate() -> None:
         ),
     )
     validated = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(candidate, entities=candidate.entities + (context,)),
     )
     assert isinstance(validated, Accepted)

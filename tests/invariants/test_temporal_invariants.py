@@ -14,10 +14,10 @@ from caron import (
     TemporalExtent,
     YearMonth,
     covered_months,
-    model_v0_5_ontology,
     validate_candidate,
 )
-from examples.temporal_queries import build_candidate as temporal_candidate
+from caron.ontology import career_ontology_v5_0
+from tests.fixtures.temporal_v5 import temporal_v5_candidate
 
 
 def _from_month_index(index: int) -> YearMonth:
@@ -43,7 +43,7 @@ def test_exact_covered_month_count_is_inclusive_and_positive(
     start_index: int,
     length: int,
 ) -> None:
-    candidate = temporal_candidate()
+    candidate = temporal_v5_candidate()
     alice = candidate.entities[1]
     start = _from_month_index(start_index)
     end = _from_month_index(start_index + length - 1)
@@ -58,7 +58,7 @@ def test_exact_covered_month_count_is_inclusive_and_positive(
         candidate,
         entities=(candidate.entities[0], generated_alice, *candidate.entities[2:]),
     )
-    result = validate_candidate(model_v0_5_ontology(), generated)
+    result = validate_candidate(career_ontology_v5_0(), generated)
     assert isinstance(result, Accepted)
 
     count = covered_months(result.realisation, generated_alice.id)
@@ -83,7 +83,7 @@ def test_every_closed_child_inside_parent_is_accepted(
     end_index: int,
 ) -> None:
     start_index, end_index = sorted((start_index, end_index))
-    candidate = temporal_candidate()
+    candidate = temporal_v5_candidate()
     synthetic = candidate.entities[3]
     generated_synthetic = replace(
         synthetic,
@@ -107,12 +107,12 @@ def test_every_closed_child_inside_parent_is_accepted(
         ),
     )
 
-    assert isinstance(validate_candidate(model_v0_5_ontology(), generated), Accepted)
+    assert isinstance(validate_candidate(career_ontology_v5_0(), generated), Accepted)
 
 
 @given(offset=st.integers(min_value=1, max_value=120))
 def test_child_starting_after_parent_is_never_accepted(offset: int) -> None:
-    candidate = temporal_candidate()
+    candidate = temporal_v5_candidate()
     synthetic = candidate.entities[3]
     start = _from_month_index(YearMonth(2025, 10).month_index + offset)
     generated_synthetic = replace(
@@ -134,7 +134,7 @@ def test_child_starting_after_parent_is_never_accepted(offset: int) -> None:
         ),
     )
 
-    result = validate_candidate(model_v0_5_ontology(), generated)
+    result = validate_candidate(career_ontology_v5_0(), generated)
 
     assert isinstance(result, Rejected)
     assert "realisation.temporal_containment_impossible" in {

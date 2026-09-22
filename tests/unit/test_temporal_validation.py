@@ -1,4 +1,4 @@
-"""Deterministic tests for Model 0.5 temporal validation."""
+"""Deterministic tests for ontology 5.0 temporal validation."""
 
 from dataclasses import replace
 
@@ -13,11 +13,10 @@ from caron import (
     RelationAssertion,
     TemporalExtent,
     YearMonth,
-    model4_ontology,
-    model_v0_5_ontology,
     validate_candidate,
     validate_ontology,
 )
+from caron.ontology import career_ontology_v5_0
 from examples.temporal_queries import build_candidate as temporal_candidate
 
 
@@ -25,21 +24,20 @@ def _codes(result: Rejected) -> set[str]:
     return {diagnostic.code for diagnostic in result.diagnostics}
 
 
-def test_model5_is_valid_and_does_not_change_model4() -> None:
-    model4 = model4_ontology()
-    model5 = model_v0_5_ontology()
+def test_v5_schema_has_the_temporal_extent_property() -> None:
+    ontology = career_ontology_v5_0()
+    context = ontology.concept(CONTEXT)
 
-    assert validate_ontology(model5) == ()
-    assert model4.version == "4"
-    assert model5.version == "0.5"
-    assert model4.concept(CONTEXT).property_definition("start") is not None  # type: ignore[union-attr]
-    assert model5.concept(CONTEXT).property_definition("start") is None  # type: ignore[union-attr]
-    assert model5.concept(CONTEXT).property_definition("temporal_extent") is not None  # type: ignore[union-attr]
+    assert validate_ontology(ontology) == ()
+    assert ontology.version == "5.0"
+    assert context is not None
+    assert context.property_definition("start") is None
+    assert context.property_definition("temporal_extent") is not None
 
 
 def test_reference_temporal_candidate_is_valid() -> None:
     assert isinstance(
-        validate_candidate(model_v0_5_ontology(), temporal_candidate()),
+        validate_candidate(career_ontology_v5_0(), temporal_candidate()),
         Accepted,
     )
 
@@ -60,7 +58,7 @@ def test_known_end_before_start_is_rejected() -> None:
     )
 
     result = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(
             candidate,
             entities=(candidate.entities[0], invalid_alice, *candidate.entities[2:]),
@@ -85,7 +83,7 @@ def test_child_extent_outside_parent_is_rejected() -> None:
         ),
     )
     result = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(
             candidate,
             entities=(
@@ -117,7 +115,7 @@ def test_transitive_ancestor_containment_is_enforced() -> None:
         EntityRef("context:synthetic-data-work"),
     )
     result = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(
             candidate,
             entities=candidate.entities + (nested,),
@@ -146,7 +144,7 @@ def test_undated_child_cannot_fit_inside_disjoint_parents() -> None:
         EntityRef(later_parent.id),
     )
     result = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(
             candidate,
             entities=candidate.entities + (later_parent,),
@@ -166,7 +164,7 @@ def test_temporal_extent_property_rejects_a_raw_string() -> None:
         (Property("label", "Raw date"), Property("temporal_extent", "2022-01")),
     )
     result = validate_candidate(
-        model_v0_5_ontology(),
+        career_ontology_v5_0(),
         replace(candidate, entities=candidate.entities + (context,)),
     )
 
@@ -174,11 +172,11 @@ def test_temporal_extent_property_rejects_a_raw_string() -> None:
     assert "record.invalid_value_kind" in _codes(result)
 
 
-def test_v4_candidate_is_not_silently_validated_as_v05() -> None:
+def test_legacy_candidate_version_is_not_silently_validated_as_v5() -> None:
     candidate = temporal_candidate()
-    mismatched = replace(candidate, ontology_version="4")
+    mismatched = replace(candidate, ontology_version="0.5")
 
-    result = validate_candidate(model_v0_5_ontology(), mismatched)
+    result = validate_candidate(career_ontology_v5_0(), mismatched)
 
     assert isinstance(result, Rejected)
     assert "realisation.ontology_version_mismatch" in _codes(result)
