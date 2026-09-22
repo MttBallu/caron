@@ -56,7 +56,7 @@ storage, query plans, visual layout, or interaction workflows.
 
 The current `caron` package remains version `0.1.0` and does not yet implement
 this ontology. A package must not expose `5.0` as an accepted schema until all
-conformance obligations in section 16 are implemented and tested.
+ontology-conformance obligations in section 16.1 are implemented and tested.
 
 The terms **MUST**, **MUST NOT**, **SHOULD**, and **MAY** express normative
 requirements in this document.
@@ -135,6 +135,23 @@ realisation. Relation assertion identifiers MUST be unique within the relation
 namespace. An entity property or relation qualifier name MUST occur at most
 once on its owning record.
 
+Within one positive realisation, each semantic relation fact MUST occur at
+most once. Its semantic key is the tuple:
+
+```text
+(relation kind, source entity id, target entity id, qualifier mapping)
+```
+
+The relation assertion identifier and the ordering of qualifier entries are
+not part of this key. Qualifier mappings compare names and exact typed values;
+an entity-reference qualifier compares the referenced entity identifier. A
+second relation record with the same semantic key makes the candidate invalid,
+even when the two records have different identifiers. Implementations SHOULD
+report this as `realisation.duplicate_relation_fact`.
+
+Identifiers remain the stable addresses used by witnesses, editing, and later
+storage contracts. They do not alter semantic fact equality.
+
 All entity and qualifier references MUST resolve to entities present in the
 same candidate and of an allowed kind. Unknown concepts, properties, relation
 kinds, qualifiers, or value kinds make a candidate invalid.
@@ -142,6 +159,18 @@ kinds, qualifiers, or value kinds make a candidate invalid.
 One identified relation assertion represents one complete qualified fact.
 Qualifier legs MUST NOT be decomposed into independent assertions that could
 be added, removed, or versioned separately from that fact.
+
+In this positive realisation contract, the implementation term
+`RelationAssertion` denotes that identified positive fact. It is not an
+epistemic assertion occurrence. A later assertion layer MAY attach multiple
+provenance, polarity, confidence, or source-state records to the same semantic
+relation fact without duplicating the fact itself.
+
+Two real-world relation occurrences that must remain distinct therefore need
+a represented semantic distinction, such as a different Context or qualifier.
+Where ontology `5.0` cannot express that distinction, the occurrence-level
+qualification remains deferred rather than being encoded by duplicate facts
+with different identifiers.
 
 ## 6. Value domains
 
@@ -333,7 +362,9 @@ question; ontology `5.0` does not impose a universal outcome-status field.
 ## 10. Cardinality requirements
 
 Cardinalities apply to included entities in every candidate, irrespective of
-the candidate's coverage scope.
+the candidate's coverage scope. They count distinct semantic relation facts,
+not duplicate relation records; semantic duplicates are independently invalid
+under section 5.
 
 | Subject | Relation position | Cardinality |
 |---|---|---:|
@@ -485,16 +516,36 @@ An ontology `5.0` implementation MUST preserve at least these boundaries:
 15. Absence of an entity or relation is not explicit negation. Conclusions from
     absence additionally depend on declared realisation coverage.
 
-## 13. Coverage and derived results
+## 13. Derivation boundary and temporal query profile
 
-Coverage describes how much of a stated scope a realisation contains. It does
-not change ontology validity. At minimum, the statuses `selective`,
-`complete_within_scope`, and `unknown` remain distinguishable.
+### 13.1 Ontology and realisation boundary
+
+Coverage is external realisation metadata describing how much of a stated
+scope a candidate contains. It never changes ontology validity or cardinality.
+Ontology `5.0` does not prescribe its record shape or status vocabulary.
 
 Query results MAY derive temporal classifications, covered-month values,
 histories, paths, bindings, or renderer-neutral graph projections. Derived
-results MUST remain separate from positive ontology assertions and SHOULD carry
-witnesses sufficient to inspect the represented evidence and relation paths.
+results MUST remain separate from positive ontology assertions.
+
+Ontology `5.0` defines the temporal value domains and consistency constraints
+used by such derivations. It does not prescribe query-result wrappers, named
+queries, selection modes, witness structures, or `GraphView`. Those constructs
+belong to separately versioned query and interaction contracts and do not
+determine the identity of the ontology schema.
+
+### 13.2 Separate temporal query profile
+
+The remainder of this section restates the accepted ontology `0.5` temporal
+query behavior as the current temporal query profile. It is normative for an
+implementation that claims that profile until M2A supersedes it, but it is not
+part of exact ontology `5.0` schema conformance. In particular, this profile
+does not make `GraphView` a universal ontology or query construct.
+
+For this profile, the coverage statuses `selective`,
+`complete_within_scope`, and `unknown` remain distinguishable. Results SHOULD
+carry witnesses sufficient to inspect the represented evidence and relation
+paths.
 
 The temporal classifications remain:
 
@@ -504,7 +555,7 @@ The temporal classifications remain:
 - `excluded`: supported by no valid interpretation;
 - `unknown`: insufficient useful temporal constraint.
 
-### 13.1 Covered-month results
+### 13.3 Covered-month results
 
 For a known closed extent, the inclusive covered-month count is:
 
@@ -521,7 +572,7 @@ occurrence has an unknown count.
 Covered-month values describe calendar envelopes, not continuous activity or
 effort.
 
-### 13.2 Temporal ordering and window selection
+### 13.4 Temporal ordering and window selection
 
 For two known closed extents, `before(A, B)` is entailed when `end(A) <
 start(B)`. Extents containing the same month are not strictly ordered at model
@@ -536,7 +587,7 @@ An activity is evaluated through its `occurs_in` relation and any relevant
 `part_of` ancestor path. This supplies temporal constraints, not a copied
 activity extent.
 
-### 13.3 Witnesses and graph projection
+### 13.5 Witnesses and graph projection
 
 Every derived temporal result SHOULD retain the activity or context, the
 temporal extent used, the relevant `occurs_in` and `part_of` path, the operation,
@@ -573,6 +624,12 @@ semantic assertion is unchanged. A split, reversed, or newly qualified
 relation MAY require a new assertion identity according to the later migration
 and serialization contract.
 
+If a source contains multiple relation records with the same ontology `5.0`
+semantic key, migration MUST emit a diagnostic. It MUST NOT silently choose
+one identifier, discard a record, or create duplicate target facts. Resolving
+such identities requires an explicit merge policy in the later migration and
+serialization contract.
+
 Missing evidence required by `5.0` produces a migration diagnostic. It MUST NOT
 be replaced by a guessed role, date, endpoint, or assertion.
 
@@ -599,23 +656,27 @@ NOT be added silently to an implementation claiming exact `5.0` conformance.
 
 ## 16. Conformance and acceptance
 
+### 16.1 Ontology `5.0` conformance
+
 An implementation conforms to ontology `5.0` only if it:
 
 1. exposes the exact ontology identity `caron.career-model` / `5.0`;
 2. implements all 13 concept kinds and their exact property definitions;
 3. implements all 31 relation kinds, endpoint unions, and qualifier rules;
 4. enforces stable nonempty record identifiers and local structural closure;
-5. enforces all activity and credential cardinalities;
-6. enforces context and organization acyclicity;
-7. enforces `aims_at` locality and all `bears_on` role and contextual-locality
+5. enforces semantic relation-fact uniqueness independently of relation record
+   identifiers;
+6. enforces all activity and credential cardinalities;
+7. enforces context and organization acyclicity;
+8. enforces `aims_at` locality and all `bears_on` role and contextual-locality
    constraints;
-8. implements the complete month-level `TemporalExtent` value contract and
+9. implements the complete month-level `TemporalExtent` value contract and
    transitive temporal consistency rules;
-9. preserves every required non-inference in section 12;
-10. rejects candidates declaring another exact ontology version;
-11. keeps derived temporal and query results outside positive assertions;
-12. passes representative valid, invalid, incomplete, and indeterminate
-    scenarios for the adopted vocabulary.
+10. preserves every required non-inference in section 12;
+11. rejects candidates declaring another exact ontology version;
+12. keeps derived temporal and query results outside positive assertions;
+13. passes representative valid and invalid candidates for the adopted
+    vocabulary and global constraints.
 
 Partial implementations MUST use an explicit development schema identifier and
 MAY publish implementation-coverage records. They MUST NOT claim the accepted
@@ -624,6 +685,8 @@ MAY publish implementation-coverage records. They MUST NOT claim the accepted
 At minimum, conformance tests MUST exercise:
 
 - personal and collective performance without invalid attribution;
+- duplicate semantic relation facts with different record identifiers,
+  including equivalent qualifier mappings presented in different orders;
 - participation with and without an organization qualifier;
 - collective membership and organization association roles;
 - Language in exposure, learning, activity use, and native-language facts;
@@ -631,17 +694,37 @@ At minimum, conformance tests MUST exercise:
 - one valid single-awarder and one valid joint-awarder credential;
 - known and absent Credential `awarded_in` values, without inference from an
   obtaining Context;
-- deterministic month-level migration of a legacy exact credential award date;
 - valid same-context `aims_at` and invalid mismatched Proposition locality;
 - proposition locality and exact `bears_on` evidence across equal and nested
   contexts, plus invalid sibling and reversed-context cases;
 - `Place` and `occurs_at` in a CV-oriented realisation;
 - known, unknown, ongoing, nested, contradictory, and unconstrained temporal
-  cases without wall-clock advancement or copied extents;
-- explicit migration diagnostics for imprecise dates and missing required
-  roles.
+  cases without wall-clock advancement or copied extents.
+
+### 16.2 Separate package and query-profile acceptance
+
+A package release MAY additionally implement migrations, the temporal query
+profile in section 13.2, `GraphView`, and other query or interaction features.
+Each such contract has its own identity and acceptance gate. Implementing or
+omitting one does not change ontology `5.0` schema identity. A missing profile
+feature is a package capability gap, not ontology non-conformance, provided the
+package does not claim support for that profile.
+
+An implementation that claims the temporal query profile MUST additionally
+test:
+
+- entailed, possible, excluded, and unknown temporal classifications;
+- exact, bounded, and unknown covered-month results;
+- definite-mode and possible-mode inclusive-window selection;
+- witnesses for direct and inherited temporal constraints; and
+- `GraphView` projection without materializing derived temporal assertions.
+
+A package that claims migration support to ontology `5.0` MUST additionally
+test deterministic month-level migration of legacy exact credential award
+dates and explicit diagnostics for imprecise dates, missing required roles,
+and duplicate semantic relation facts.
 
 The package release implementing ontology `5.0` is assigned separately from
-this specification. Until that implementation passes this gate, the current
-executable authorities remain ontology versions `4` and `0.5` in `caron`
-`0.1.0`.
+this specification. Until an implementing package passes ontology conformance
+and every feature-profile gate it advertises, the current executable
+authorities remain ontology versions `4` and `0.5` in `caron` `0.1.0`.
