@@ -6,7 +6,7 @@ ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_6_query_port
+current_phase: phase_7_examples_visualization
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -477,18 +477,56 @@ behavior before later visualization, legacy removal, and public promotion.
 
 ## 10. Phase 6 — Port retained query behavior
 
-- [ ] Port temporal fixtures from `0.5` to `5.0`.
-- [ ] Run `covered_months`, `before`, and `overlaps` on `5.0`.
-- [ ] Run definite and possible temporal-window selection on `5.0`.
-- [ ] Verify direct and inherited temporal witnesses.
-- [ ] Verify that `GraphView` never materializes derived assertions.
-- [ ] Port private query-algebra fixtures to the typed use relations.
-- [ ] Retain join, left-join, union, projection, ordering, and witness tests.
-- [ ] Handle `YearMonth` explicitly in scalar property lookup.
-- [ ] Keep `TemporalExtent` handling explicit rather than flattening it.
-- [ ] Do not add new reusable-resource-history queries in this phase.
+- [x] Port temporal fixtures from `0.5` to `5.0`.
+- [x] Run `covered_months`, `before`, and `overlaps` on `5.0`.
+- [x] Run definite and possible temporal-window selection on `5.0`.
+- [x] Verify direct and inherited temporal witnesses.
+- [x] Verify that `GraphView` never materializes derived assertions.
+- [x] Port private query-algebra fixtures to the typed use relations.
+- [x] Retain join, left-join, union, projection, ordering, and witness tests.
+- [x] Handle `YearMonth` explicitly in scalar property lookup.
+- [x] Keep `TemporalExtent` handling explicit rather than flattening it.
+- [x] Do not add new reusable-resource-history queries in this phase.
 
-Acceptance gate: every retained query behavior works against ontology `5.0`.
+Acceptance gate passed: every retained query behavior works against the
+ontology `5.0-dev` implementation candidate.
+
+### 10.1 Port boundary
+
+`tests/fixtures/temporal_v5.py` replaces the query tests' dependency on the
+legacy `0.5` example with a test-only `5.0-dev` candidate. It covers closed,
+ongoing, inherited, and undated Context time, and uses the typed
+`uses_technology` relation. The public temporal functions remain unchanged;
+they now execute against a realisation accepted by the complete development
+schema.
+
+The private query-algebra fixture is also a valid `5.0-dev` candidate. Its
+compact `uses` facts have become `uses_technology`, and a valid Credential
+case exercises `awarded_in`. Scalar lookup preserves `YearMonth` as a typed
+value. Lookup and ordering preserve an entire `TemporalExtent`, including its
+end-state variant, rather than reducing it to a legacy year or separate
+start/end fields.
+
+No public query language, named reusable-resource-history query, derived
+assertion, serialization format, or persistence contract is introduced.
+`GraphView` continues to project only asserted entities and relations selected
+by witnesses. Direct and inherited temporal evidence remains explicit, while
+derived temporal classifications never become graph assertions.
+
+### 10.2 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 439
+tests, formatting, Ruff, strict mypy, semantic/temporal examples, all existing
+viewers, and source/wheel builds.
+
+The retained query evidence comprises 15 temporal-query tests, four temporal
+invariant tests, and nine private query-algebra tests. These 28 tests cover
+month counts, ordering, overlap, definite/possible window selection, direct
+and inherited witnesses, asserted-only graph projection, natural and left
+joins, union, extension, projection, ordering, path results, selective empty
+results, and typed property lookup. Four tests are new in this phase; the
+remaining cases are ports of retained behavior. Maintained examples and
+viewers intentionally remain on the legacy schemas until Phase 7.
 
 ## 11. Phase 7 — Examples and visualization
 

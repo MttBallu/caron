@@ -1,26 +1,27 @@
-"""Validated Model 4 fixture for the ported query-algebra regressions."""
+"""Validated ontology 5.0 fixture for private query-algebra regressions."""
 
 from caron import (
     Accepted,
-    Coverage,
-    CoverageStatus,
     Entity,
     EntityRef,
     Property,
     Qualifier,
     RealisationCandidate,
-    RelationAssertion,
+    TemporalExtent,
     ValidatedRealisation,
-    model4_ontology,
+    YearMonth,
     validate_candidate,
 )
+from caron.entities import PropertyValue
+from caron.ontology import _career_ontology_v5_0_development
+from tests.fixtures.v5 import assertion, v5_candidate
 
 
 def _entity(
     entity_id: str,
     kind: str,
     label: str,
-    **properties: str | int | EntityRef,
+    **properties: PropertyValue,
 ) -> Entity:
     return Entity(
         entity_id,
@@ -33,20 +34,42 @@ def _entity(
 def query_algebra_candidate() -> RealisationCandidate:
     entities = (
         _entity("matteo", "Person", "Matteo"),
-        _entity("msc", "Context", "MSc subatomic physics", start=2021),
+        _entity(
+            "msc",
+            "Context",
+            "MSc subatomic physics",
+            temporal_extent=TemporalExtent.closed("2021-09", "2022-02"),
+        ),
         _entity(
             "beta_telescope",
             "Context",
             "Beta-spectrometer development",
-            start=2024,
+            temporal_extent=TemporalExtent.closed("2024-01", "2025-06"),
         ),
         _entity("geant4_refresh", "Context", "Informal GEANT4 refresh"),
-        _entity("gamma_ml", "Context", "Gamma-analysis machine learning", start=2023),
-        _entity("jax_geopro", "Context", "jax-geopro", start=2026),
+        _entity(
+            "gamma_ml",
+            "Context",
+            "Gamma-analysis machine learning",
+            temporal_extent=TemporalExtent.closed("2023-01", "2024-12"),
+        ),
+        _entity(
+            "jax_geopro",
+            "Context",
+            "jax-geopro",
+            temporal_extent=TemporalExtent.ongoing("2026-04", as_of="2026-09"),
+        ),
         _entity("geant4", "Technology", "GEANT4"),
         _entity("jax", "Technology", "JAX"),
         _entity("python", "Technology", "Python"),
         _entity("jax_codebase", "Artifact", "jax-geopro codebase"),
+        _entity("university", "Organization", "Université Paris-Saclay"),
+        _entity(
+            "doctorate",
+            "Credential",
+            "Doctorate",
+            awarded_in=YearMonth.parse("2025-10"),
+        ),
         _entity(
             "implement_detector_simulation",
             "Activity",
@@ -95,100 +118,115 @@ def query_algebra_candidate() -> RealisationCandidate:
         relation
         for activity, context in activities_and_contexts.items()
         for relation in (
-            RelationAssertion(
+            assertion(
                 f"performs:{activity}",
                 "performs",
-                EntityRef("matteo"),
-                EntityRef(activity),
+                "matteo",
+                activity,
             ),
-            RelationAssertion(
+            assertion(
                 f"occurs_in:{activity}",
                 "occurs_in",
-                EntityRef(activity),
-                EntityRef(context),
+                activity,
+                context,
             ),
         )
     )
     relations = (
         *structural_relations,
-        RelationAssertion(
+        assertion(
             "learns:geant4:msc",
             "learns",
-            EntityRef("matteo"),
-            EntityRef("geant4"),
-            (Qualifier("context", EntityRef("msc")),),
+            "matteo",
+            "geant4",
+            Qualifier("context", EntityRef("msc")),
         ),
-        RelationAssertion(
+        assertion(
             "learns:geant4:refresh",
             "learns",
-            EntityRef("matteo"),
-            EntityRef("geant4"),
-            (Qualifier("context", EntityRef("geant4_refresh")),),
+            "matteo",
+            "geant4",
+            Qualifier("context", EntityRef("geant4_refresh")),
         ),
-        RelationAssertion(
+        assertion(
             "uses:geant4:detector",
-            "uses",
-            EntityRef("implement_detector_simulation"),
-            EntityRef("geant4"),
+            "uses_technology",
+            "implement_detector_simulation",
+            "geant4",
         ),
-        RelationAssertion(
+        assertion(
             "uses:jax:design",
-            "uses",
-            EntityRef("design_measure_abstraction"),
-            EntityRef("jax"),
+            "uses_technology",
+            "design_measure_abstraction",
+            "jax",
         ),
-        RelationAssertion(
+        assertion(
             "uses:jax:ot",
-            "uses",
-            EntityRef("implement_ot_losses"),
-            EntityRef("jax"),
+            "uses_technology",
+            "implement_ot_losses",
+            "jax",
         ),
-        RelationAssertion(
+        assertion(
             "produces:codebase:design",
             "produces",
-            EntityRef("design_measure_abstraction"),
-            EntityRef("jax_codebase"),
+            "design_measure_abstraction",
+            "jax_codebase",
         ),
-        RelationAssertion(
+        assertion(
             "produces:codebase:ot",
             "produces",
-            EntityRef("implement_ot_losses"),
-            EntityRef("jax_codebase"),
+            "implement_ot_losses",
+            "jax_codebase",
         ),
-        RelationAssertion(
+        assertion(
             "results_in:instability",
             "results_in",
-            EntityRef("train_initial_unet"),
-            EntityRef("training_instability"),
+            "train_initial_unet",
+            "training_instability",
         ),
-        RelationAssertion(
+        assertion(
             "motivates:edge_investigation",
             "motivates",
-            EntityRef("training_instability"),
-            EntityRef("investigate_edge_cases"),
+            "training_instability",
+            "investigate_edge_cases",
         ),
-        RelationAssertion(
+        assertion(
             "establishes:edge_diagnosis",
             "establishes",
-            EntityRef("investigate_edge_cases"),
-            EntityRef("edge_case_diagnosis"),
+            "investigate_edge_cases",
+            "edge_case_diagnosis",
+        ),
+        assertion(
+            "awarded_to:doctorate",
+            "awarded_to",
+            "doctorate",
+            "matteo",
+        ),
+        assertion(
+            "awarded_by:doctorate",
+            "awarded_by",
+            "doctorate",
+            "university",
+        ),
+        assertion(
+            "obtained_through:doctorate",
+            "obtained_through",
+            "doctorate",
+            "gamma_ml",
         ),
     )
-    return RealisationCandidate(
-        id="query-algebra-fixture",
-        ontology_id="caron.career-model",
-        ontology_version="4",
-        entities=entities,
-        relations=relations,
-        coverage=Coverage(
-            CoverageStatus.SELECTIVE,
-            "Query-algebra regression fixture; absence is not career absence.",
-        ),
+    return v5_candidate(
+        entities,
+        relations,
+        candidate_id="query-algebra-fixture",
+        scope="Query-algebra regression fixture; absence is not career absence.",
     )
 
 
 def validated_query_algebra_fixture() -> ValidatedRealisation:
-    result = validate_candidate(model4_ontology(), query_algebra_candidate())
+    result = validate_candidate(
+        _career_ontology_v5_0_development(), query_algebra_candidate()
+    )
     if not isinstance(result, Accepted):
         raise AssertionError(result.diagnostics)
     return result.realisation

@@ -1,4 +1,4 @@
-from caron import EntityRef, YearMonth
+from caron import EntityRef, TemporalExtent, YearMonth
 from caron._query_algebra import (
     BindingTable,
     EntityConstant,
@@ -43,7 +43,7 @@ def _activities_in_context_plan() -> OrderBy:
         )
     )
     resources = RelationPattern(
-        frozenset({"uses", "produces"}),
+        frozenset({"uses_technology", "produces"}),
         activity,
         resource,
         kind_variable=role,
@@ -60,7 +60,7 @@ def _activities_in_context_plan() -> OrderBy:
 def _reusable_entity_history_plan(target_id: str = "geant4") -> OrderBy:
     activity = Variable("activity")
     context = Variable("context")
-    context_start = Variable("context_start")
+    context_extent = Variable("context_extent")
     event_kind = Variable("event_kind")
     learning = Extend(
         RelationPattern(
@@ -80,7 +80,7 @@ def _reusable_entity_history_plan(target_id: str = "geant4") -> OrderBy:
                 activity,
             ),
             RelationPattern(
-                frozenset({"uses", "applies", "draws_on"}),
+                frozenset({"uses_technology", "applies", "draws_on"}),
                 activity,
                 EntityConstant(target_id),
                 kind_variable=event_kind,
@@ -94,13 +94,13 @@ def _reusable_entity_history_plan(target_id: str = "geant4") -> OrderBy:
             LookupProperty(
                 events,
                 context,
-                "start",
-                context_start,
+                "temporal_extent",
+                context_extent,
                 allow_missing=True,
             ),
-            (event_kind, context, activity, context_start),
+            (event_kind, context, activity, context_extent),
         ),
-        (context_start,),
+        (context_extent,),
     )
 
 
@@ -217,9 +217,9 @@ def test_left_join_returns_normalized_rows_and_a_witness_derived_view() -> None:
     assert isinstance(answer, BindingTable)
     assert tuple(row.values for row in answer.rows) == (
         ("design_measure_abstraction", "produces", "jax_codebase"),
-        ("design_measure_abstraction", "uses", "jax"),
+        ("design_measure_abstraction", "uses_technology", "jax"),
         ("implement_ot_losses", "produces", "jax_codebase"),
-        ("implement_ot_losses", "uses", "jax"),
+        ("implement_ot_losses", "uses_technology", "jax"),
         ("review_api_constraints", None, None),
     )
     assert {entity.id for entity in view.entities} == {
@@ -233,19 +233,19 @@ def test_left_join_returns_normalized_rows_and_a_witness_derived_view() -> None:
     }
 
 
-def test_union_and_property_lookup_preserve_unknown_dates_and_witnesses() -> None:
+def test_union_and_property_lookup_preserve_typed_extents_and_witnesses() -> None:
     realisation = validated_query_algebra_fixture()
     variables = (
         Variable("event_kind"),
         Variable("context"),
         Variable("activity"),
-        Variable("context_start"),
+        Variable("context_extent"),
     )
     relation = evaluate_plan(realisation, _reusable_entity_history_plan())
     answer = binding_table(
         relation,
         variables=variables,
-        ordered_by=(Variable("context_start"),),
+        ordered_by=(Variable("context_extent"),),
     )
     view = graph_view_from_relation(
         realisation,
@@ -254,12 +254,24 @@ def test_union_and_property_lookup_preserve_unknown_dates_and_witnesses() -> Non
     )
 
     assert tuple(row.values for row in answer.rows) == (
-        ("learns", "msc", None, 2021),
-        ("uses", "beta_telescope", "implement_detector_simulation", 2024),
+        (
+            "learns",
+            "msc",
+            None,
+            TemporalExtent.closed("2021-09", "2022-02"),
+        ),
+        (
+            "uses_technology",
+            "beta_telescope",
+            "implement_detector_simulation",
+            TemporalExtent.closed("2024-01", "2025-06"),
+        ),
         ("learns", "geant4_refresh", None, None),
     )
     assert all(row.witness.relations for row in relation.rows)
-    assert relation.rows[0].witness.properties == ((EntityRef("msc"), "start"),)
+    assert relation.rows[0].witness.properties == (
+        (EntityRef("msc"), "temporal_extent"),
+    )
     assert relation.rows[2].witness.properties == ()
     assert "learns:geant4:msc" in {item.id for item in view.relations}
     assert {"msc", "beta_telescope", "geant4"} <= {item.id for item in view.entities}
@@ -336,3 +348,37 @@ def test_year_month_is_a_scalar_orderable_property_value() -> None:
 
     assert _property_value(october) == october
     assert _sortable_value(september) < _sortable_value(october)
+
+
+def test_year_month_property_lookup_remains_typed_end_to_end() -> None:
+    credential = Variable("credential")
+    award_month = Variable("award_month")
+    plan = LookupProperty(
+        RelationPattern(
+            frozenset({"awarded_to"}),
+            credential,
+            EntityConstant("matteo"),
+        ),
+        credential,
+        "awarded_in",
+        award_month,
+    )
+
+    relation = evaluate_plan(validated_query_algebra_fixture(), plan)
+    answer = binding_table(relation, variables=(credential, award_month))
+
+    assert tuple(row.values for row in answer.rows) == (
+        ("doctorate", YearMonth.parse("2025-10")),
+    )
+    assert relation.rows[0].witness.properties == (
+        (EntityRef("doctorate"), "awarded_in"),
+    )
+
+
+def test_temporal_extent_binding_is_not_flattened() -> None:
+    extent = TemporalExtent.ongoing("2026-04", as_of="2026-09")
+
+    assert _property_value(extent) is extent
+    assert _sortable_value(TemporalExtent.closed("2025-01", "2025-12")) < (
+        _sortable_value(extent)
+    )
