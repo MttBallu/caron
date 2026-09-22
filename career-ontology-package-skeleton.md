@@ -53,6 +53,8 @@ career-ontology/
 │   ├── career-model-v0.5-temporal-contract-review.md
 │   ├── career-model-v0.5-temporal-instantiation-experiment.md
 │   ├── career-ontology-entity-representation-pseudocode.md
+│   ├── career-ontology-m1a-reconciliation.md
+│   ├── career-ontology-m1b-semantic-decisions.md
 │   └── career-ontology-package-boundaries.md
 ├── examples/
 │   ├── __init__.py

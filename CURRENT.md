@@ -14,11 +14,14 @@ The M0 baseline is the Git revision containing this record on `main`.
 | Ontology identity | `caron.career-model` | Stable ontology-family identifier |
 | Compatibility schema | version `4` | Earlier executable schema retained for regressions and migration work |
 | Current temporal schema | version `0.5` | Model 4 vocabulary with the accepted month-level temporal contract |
+| Integrated ontology target | version `5.0` | New semantic generation assigned by M1-B; not yet specified or implemented |
 
-`4`, Model 4.2, and `0.5` are lineage labels, not numbers to compare. Model 4.2
-is the conceptual predecessor; executable version `4` is the compatibility
-schema represented in this package; `0.5` is the current temporal executable
-schema. Their full specification reconciliation is an M1 deliverable.
+`4`, Model 4.2, `0.5`, and `5.0` are lineage labels, not numbers to compare
+across conceptual and executable histories. Model 4.2 is the conceptual
+predecessor; executable version `4` is the compatibility schema; `0.5` is the
+current compact temporal schema; and `5.0` is the integrated ontology target.
+The `caron` distribution version is independent: one package release may
+support several exact ontology versions and migrations.
 
 ## Authority map
 
@@ -28,6 +31,7 @@ schema. Their full specification reconciliation is an M1 deliverable.
 | `tests/` | Current executable regressions | Accepted behavior and non-inferences |
 | `docs/career-model-v0.5-temporal-contract.md` | Normative for v0.5 temporality | Temporal value, validation, and query semantics |
 | `docs/career-ontology-package-boundaries.md` | Normative architecture note | Package ownership and public/private boundaries |
+| `docs/career-ontology-m1b-semantic-decisions.md` | Accepted M1-B decisions | Normative inputs to the integrated ontology `5.0` specification |
 | `career-ontology-package-skeleton.md` | Current implementation overview | Implemented surface, tree, and deliberately deferred work |
 | Temporal review and instantiation documents | Supporting evidence | Design review and worked experiment; not separate runtime authorities |
 | `examples/` | Executable demonstrations | Semantic, temporal, and renderer behavior from the maintained package |
@@ -35,15 +39,19 @@ schema. Their full specification reconciliation is an M1 deliverable.
 | Query-algebra archive | Historical experiment | Its accepted operator and witness regressions are ported to `caron/_query_algebra.py` and current tests |
 
 Documents outside this table may explain earlier decisions, but they do not
-override the current code, tests, temporal contract, or package-boundary note.
+override the current code, tests, temporal contract, M1-B decisions, or
+package-boundary note.
 
 ## Active milestone
 
-M1-A is complete. The
+M1-A and M1-B are complete. The
 [M1-A reconciliation](docs/career-ontology-m1a-reconciliation.md) maps every
 Model 4.2 entity, relation, invariant, architecture boundary, and competency
-question to executable versions `4` and `0.5`. It is a diagnosis, not a new
-ontology authority. M1-B is the next decision gate.
+question to executable versions `4` and `0.5`. The
+[M1-B decision record](docs/career-ontology-m1b-semantic-decisions.md) resolves
+the semantic gaps and assigns the new integrated ontology version `5.0` while
+keeping the `caron` package version independent. M1-C, the complete normative
+ontology `5.0` specification, is the next gate.
 
 ## Maintained implementation
 
@@ -96,11 +104,10 @@ gate generates it in a temporary directory from the same checked-out sources.
 
 ## Explicitly unresolved
 
-The following are not silently decided by M0:
+The following remain unresolved after M1-B:
 
-- integrated Career Ontology 0.5 prose and the exact Model 4.2/`4`/`0.5`
-  migration declaration;
-- status of `Place`, proposition locality, and `BearsOn` contextual validity;
+- integrated Career Ontology `5.0` prose and the exact Model 4.2/`4`/`0.5` →
+  `5.0` lineage and migration declaration;
 - one unified public result contract across binding tables, paths, temporal
   answers, and `GraphView`;
 - schema-aware query-plan candidate and validation boundaries;

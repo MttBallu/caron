@@ -25,7 +25,13 @@ previously been described too loosely as one evolving model:
 
 M1-A is an inventory and diagnosis. It does not silently extend the ontology or
 settle the remaining semantic choices. Its output is the evidence needed for
-M1-B decisions and the integrated Career Ontology 0.5 specification.
+M1-B decisions and the integrated Career Ontology specification.
+
+> **M1-B resolution:** `0.5` was the working target label when this diagnostic
+> was written. M1-B preserves implemented ontology `0.5` and assigns the new
+> integrated semantic generation the exact version `5.0`. References below to
+> an integrated `0.5` are historical planning labels, not current version
+> declarations.
 
 The principal conclusion is:
 
@@ -89,12 +95,12 @@ flowchart TD
     M42["Conceptual Model 4.2"]
     E4["Executable schema 4"]
     T05["Executable temporal schema 0.5"]
-    I05["Integrated Career Ontology 0.5"]
+    I50["Integrated Career Ontology 5.0"]
 
     M42 -. "partial encoding" .-> E4
     E4 -->|"temporal replacement"| T05
-    M42 -->|"M1 target"| I05
-    T05 -->|"M1 target"| I05
+    M42 -->|"M1 target"| I50
+    T05 -->|"M1 target"| I50
 ```
 
 The identifiers are labels in different histories:
@@ -105,7 +111,7 @@ The identifiers are labels in different histories:
   `caron`;
 - executable **`0.5`** copies the executable `4` concepts, relations, and
   requirements while replacing coarse context time with `TemporalExtent`;
-- the planned **integrated Career Ontology `0.5`** must combine the adopted
+- the planned **integrated Career Ontology `5.0`** must combine the adopted
   Model 4.2 semantic inventory with the accepted temporal contract.
 
 Therefore, numeric ordering between `4.2` and `0.5` has no meaning. Migration
