@@ -14,7 +14,7 @@ The M0 baseline is the Git revision containing this record on `main`.
 | Ontology identity | `caron.career-model` | Stable ontology-family identifier |
 | Compatibility schema | version `4` | Earlier executable schema retained for regressions and migration work |
 | Current temporal schema | version `0.5` | Model 4 vocabulary with the accepted month-level temporal contract |
-| Integrated ontology target | version `5.0` | New semantic generation assigned by M1-B; not yet specified or implemented |
+| Integrated ontology target | version `5.0` | New semantic generation assigned by M1-B and specified by the proposed M1-C contract; not yet accepted or implemented |
 
 `4`, Model 4.2, `0.5`, and `5.0` are lineage labels, not numbers to compare
 across conceptual and executable histories. Model 4.2 is the conceptual
@@ -32,6 +32,7 @@ support several exact ontology versions and migrations.
 | `docs/career-model-v0.5-temporal-contract.md` | Normative for v0.5 temporality | Temporal value, validation, and query semantics |
 | `docs/career-ontology-package-boundaries.md` | Normative architecture note | Package ownership and public/private boundaries |
 | `docs/career-ontology-m1b-semantic-decisions.md` | Accepted M1-B decisions | Normative inputs to the integrated ontology `5.0` specification |
+| `docs/career-ontology-v5.0-specification.md` | Proposed M1-C specification | Complete candidate vocabulary, invariants, lineage, migration, and conformance contract for ontology `5.0` |
 | `career-ontology-package-skeleton.md` | Current implementation overview | Implemented surface, tree, and deliberately deferred work |
 | Temporal review and instantiation documents | Supporting evidence | Design review and worked experiment; not separate runtime authorities |
 | `examples/` | Executable demonstrations | Semantic, temporal, and renderer behavior from the maintained package |
@@ -50,8 +51,10 @@ Model 4.2 entity, relation, invariant, architecture boundary, and competency
 question to executable versions `4` and `0.5`. The
 [M1-B decision record](docs/career-ontology-m1b-semantic-decisions.md) resolves
 the semantic gaps and assigns the new integrated ontology version `5.0` while
-keeping the `caron` package version independent. M1-C, the complete normative
-ontology `5.0` specification, is the next gate.
+keeping the `caron` package version independent. The
+[M1-C candidate](docs/career-ontology-v5.0-specification.md) now consolidates
+those decisions into one exact specification. Review and acceptance of that
+candidate is the current gate; implementation starts only afterward.
 
 ## Maintained implementation
 
@@ -104,10 +107,11 @@ gate generates it in a temporary directory from the same checked-out sources.
 
 ## Explicitly unresolved
 
-The following remain unresolved after M1-B:
+The following remain unresolved while the M1-C candidate awaits acceptance:
 
-- integrated Career Ontology `5.0` prose and the exact Model 4.2/`4`/`0.5` →
-  `5.0` lineage and migration declaration;
+- acceptance and implementation of the proposed Career Ontology `5.0`
+  specification, including its exact Model 4.2/`4`/`0.5` → `5.0` lineage and
+  migration declaration;
 - one unified public result contract across binding tables, paths, temporal
   answers, and `GraphView`;
 - schema-aware query-plan candidate and validation boundaries;

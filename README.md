@@ -70,6 +70,11 @@ requests.
 
 The temporal extension is specified by the [temporal extent contract](docs/career-model-v0.5-temporal-contract.md) and exercised in the [temporal instantiation experiment](docs/career-model-v0.5-temporal-instantiation-experiment.md). The implemented query surface intentionally remains small: `covered_months`, `before`, `overlaps`, `select_activities_in_window`, and the renderer-supporting `select_whole_realisation`.
 
+The proposed [Career Ontology 5.0 specification](docs/career-ontology-v5.0-specification.md)
+integrates the complete adopted Model 4.2 vocabulary with those temporal
+semantics and the accepted M1-B decisions. It is a specification candidate,
+not an executable schema in the current `caron` `0.1.0` package.
+
 The private witness-carrying algebra preserves the accepted join, left-join,
 union, extension, property-lookup, projection, and ordering regressions. It is
 not a public plan language; schema-aware plan validation and stable named query

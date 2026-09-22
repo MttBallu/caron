@@ -55,6 +55,7 @@ career-ontology/
 │   ├── career-ontology-entity-representation-pseudocode.md
 │   ├── career-ontology-m1a-reconciliation.md
 │   ├── career-ontology-m1b-semantic-decisions.md
+│   ├── career-ontology-v5.0-specification.md
 │   └── career-ontology-package-boundaries.md
 ├── examples/
 │   ├── __init__.py
@@ -249,6 +250,13 @@ No empty packages are created for future features. Structure should appear only 
 
 ## 9. Next executable increment
 
-The next increment should be chosen from observed use rather than by filling the package map. Strong candidates are period controls backed by temporal queries and a chronological projection for the use of a selected technology or skill. Either increment must preserve uncertainty and witnesses without turning display order into asserted `before` relations.
+After the proposed ontology `5.0` specification is reviewed and accepted, the
+next executable increment is its implementation as a new exact schema alongside
+preserved schemas `4` and `0.5`. That increment must add the complete concept,
+relation, qualifier, cardinality, graph-invariant, temporal, migration, and
+non-inference test surface required by the specification. The schema viewer
+must then render `5.0` from the same `OntologySchema` authority.
 
-That increment should not introduce a public query language, general optimizer, storage abstraction, or narrative interpretation inside the query engine.
+The implementation package release number remains a separate decision. This
+increment should not introduce a public query language, general optimizer,
+storage abstraction, or narrative interpretation inside the query engine.
