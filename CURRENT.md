@@ -15,7 +15,7 @@ The M0 baseline is the Git revision containing this record on `main`.
 | Compatibility schema | version `4` | Earlier executable schema retained for regressions and migration work |
 | Current temporal schema | version `0.5` | Model 4 vocabulary with the accepted month-level temporal contract |
 | Integrated ontology target | version `5.0` | Accepted normative schema completed by M1-C; conformance implementation in progress |
-| Development catalogue | version `5.0-dev` | Complete declarations and invariant enforcement; private factory pending conformance promotion |
+| Development catalogue | version `5.0-dev` | Complete declarations, invariant enforcement, and representative conformance suite; private pending promotion |
 
 `4`, Model 4.2, `0.5`, and `5.0` are lineage labels, not numbers to compare
 across conceptual and executable histories. Model 4.2 is the conceptual
@@ -57,27 +57,30 @@ keeping the `caron` package version independent. The
 [accepted M1-C specification](docs/career-ontology-v5.0-specification.md)
 consolidates those decisions into one exact normative schema. Implementation
 is tracked in the [maintained task list](docs/career-ontology-v5.0-implementation-plan.md).
-Phases 1–4 have added the meta-model extensions, the complete development
+Phases 1–5 have added the meta-model extensions, the complete development
 catalogue (13 concepts, 31 relation signatures, six cardinalities, and eight
 invariant declarations), local record validation, and all realisation-wide
-invariants. Phase 5 (fixtures and representative conformance) is next.
+invariants, plus representative fixtures and conformance evidence. Phase 6
+(port retained query behavior) is next.
 
 The private `_career_ontology_v5_0_development()` factory returns version
 `5.0-dev`, not the accepted `5.0` identifier. All eight declared handlers are
 implemented and ontology self-validation succeeds. Conforming development
 candidates can now be validated; this does not claim exact `5.0` conformance.
 The public `career_ontology_v5_0()` factory and exact `5.0` identity remain
-gated on the representative conformance suite, non-inference audit, and later
-promotion work. Package version `0.1.0` and existing examples/viewer commands
-are unchanged.
+gated on the query/example ports, legacy removal, release documentation, and
+later promotion work. Package version `0.1.0` and existing examples/viewer
+commands are unchanged.
 
 Validation is staged: record shape, identifiers, required text, typed values,
 and reference closure must pass before cardinalities and graph invariants run.
 Semantic relation identity, distinct-fact cardinalities, structural acyclicity,
 Proposition locality, `bears_on` roles/locality, and transitive temporal
-consistency are implemented. The full verification gate passes with 389 tests;
-details and stable diagnostic codes are recorded in Phases 3 and 4 of the
-implementation plan.
+consistency are implemented. The representative conformance suite covers all
+13 concepts, all 31 relation kinds, required non-inferences, cardinality
+failures, and generative boundaries.
+The full verification gate passes with 435 tests; details and evidence mapping
+are recorded in Phases 3–5 of the implementation plan.
 
 ## Pre-1.0 implementation-transition policy
 

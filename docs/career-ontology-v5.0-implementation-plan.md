@@ -6,7 +6,7 @@ ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_5_conformance_suite
+current_phase: phase_6_query_port
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -375,54 +375,105 @@ accepted, but no public exact-`5.0` factory or package-version bump is claimed.
 
 ### 9.1 Fixtures
 
-- [ ] Create a minimal valid `5.0` candidate.
-- [ ] Create focused builders for labelled entities, propositions, and
+- [x] Create a minimal valid `5.0` candidate.
+- [x] Create focused builders for labelled entities, propositions, and
       relation assertions.
-- [ ] Create a rich valid candidate covering all 13 concepts.
-- [ ] Cover all 31 relation kinds across focused fixtures.
+- [x] Create a rich valid candidate covering all 13 concepts.
+- [x] Cover all 31 relation kinds across focused fixtures.
 
 ### 9.2 Required valid and invalid cases
 
-- [ ] Cover personal, collective, and multiple-performer activities.
-- [ ] Cover participation with and without an organization.
-- [ ] Cover collective membership and organization association.
-- [ ] Cover Language exposure, learning, use, and native-language facts.
-- [ ] Cover independent `applies` and `draws_on` facts.
-- [ ] Cover input, use, modification, and production distinctions.
-- [ ] Cover single- and joint-awarder credentials.
-- [ ] Cover known and absent `awarded_in` values.
-- [ ] Cover valid and invalid `aims_at` locality.
-- [ ] Cover equal, nested, sibling, and reversed `bears_on` Contexts.
-- [ ] Cover Place and `occurs_at`.
-- [ ] Cover known, unknown, ongoing, undated, nested, and contradictory time.
-- [ ] Cover every activity and credential cardinality failure.
+- [x] Cover personal, collective, and multiple-performer activities.
+- [x] Cover participation with and without an organization.
+- [x] Cover collective membership and organization association.
+- [x] Cover Language exposure, learning, use, and native-language facts.
+- [x] Cover independent `applies` and `draws_on` facts.
+- [x] Cover input, use, modification, and production distinctions.
+- [x] Cover single- and joint-awarder credentials.
+- [x] Cover known and absent `awarded_in` values.
+- [x] Cover valid and invalid `aims_at` locality.
+- [x] Cover equal, nested, sibling, and reversed `bears_on` Contexts.
+- [x] Cover Place and `occurs_at`.
+- [x] Cover known, unknown, ongoing, undated, nested, and contradictory time.
+- [x] Cover every activity and credential cardinality failure.
 
 ### 9.3 Required non-inferences
 
-- [ ] Participation does not create performance.
-- [ ] Collective performance does not create personal performance.
-- [ ] Exposure does not create learning.
-- [ ] Learning does not create exposure or resource use.
-- [ ] Activity use does not create a Person-to-resource assertion.
-- [ ] `applies` and `draws_on` do not imply one another.
-- [ ] Language facts do not create `native_language`.
-- [ ] Artifact-role relations remain independent.
-- [ ] `supports` does not create `establishes`.
-- [ ] Context membership does not create `addresses`.
-- [ ] Outcome paths do not create `bears_on`.
-- [ ] Temporal containment does not copy extents.
-- [ ] Validation preserves the candidate's positive relation set exactly.
+- [x] Participation does not create performance.
+- [x] Collective performance does not create personal performance.
+- [x] Exposure does not create learning.
+- [x] Learning does not create exposure or resource use.
+- [x] Activity use does not create a Person-to-resource assertion.
+- [x] `applies` and `draws_on` do not imply one another.
+- [x] Language facts do not create `native_language`.
+- [x] Artifact-role relations remain independent.
+- [x] `supports` does not create `establishes`.
+- [x] Context membership does not create `addresses`.
+- [x] Outcome paths do not create `bears_on`.
+- [x] Temporal containment does not copy extents.
+- [x] Validation preserves the candidate's positive relation set exactly.
 
 ### 9.4 Generative invariants
 
-- [ ] Preserve validation independence from record ordering.
-- [ ] Generate equivalent qualifier-map orderings.
-- [ ] Generate valid and invalid endpoint-family combinations.
-- [ ] Preserve `YearMonth` round trips across years 1–9999.
-- [ ] Generate valid and impossible temporal-containment cases.
+- [x] Preserve validation independence from record ordering.
+- [x] Generate equivalent qualifier-map orderings.
+- [x] Generate valid and invalid endpoint-family combinations.
+- [x] Preserve `YearMonth` round trips across years 1–9999.
+- [x] Generate valid and impossible temporal-containment cases.
 
-Acceptance gate: every mandatory conformance scenario has explicit test
+Acceptance gate passed: every mandatory conformance scenario has explicit test
 evidence.
+
+### 9.5 Fixture boundary
+
+`tests/fixtures/v5.py` supplies test-only builders for labelled entities,
+localized Propositions, identified relation assertions, candidates, valid
+Activity performer configurations, and valid Credential awards. These are not
+runtime factories or serialization formats.
+
+The minimal fixture contains one Person, Context, and Activity with the two
+required Activity facts. The rich fixture contains 24 entities and 37 relation
+assertions. It independently covers all 13 concept kinds and all 31 relation
+kinds while remaining valid, including:
+
+- personal and collective performance;
+- qualified participation with and without an Organization;
+- Language exposure, learning, Activity use, and native-language facts;
+- independent reusable-resource and Artifact roles;
+- a joint award with a known `YearMonth`;
+- Place, Proposition locality, explicit outcome roles, and `bears_on`;
+- nested known Context extents.
+
+### 9.6 Conformance evidence
+
+`tests/conformance/test_v5_conformance.py` adds representative positive,
+negative, and non-inference scenarios. It verifies all bounded Activity and
+Credential cardinality failures; the `evidenced_by` `0..*` case is covered by
+a valid Credential with no evidence assertion. Validation of the rich fixture
+also proves that candidate entity and relation tuples are preserved exactly.
+
+The focused Phase 3 tests remain the evidence for identifier, required-text,
+typed-value, vocabulary, reference, and duplicate-field behavior. The focused
+Phase 4 tests remain the evidence for semantic duplicates, structural cycles,
+valid and invalid `aims_at`, equal/nested/sibling/reversed `bears_on`, and the
+complete known/unknown/ongoing/undated temporal matrix. Phase 5 does not copy
+those tests; it integrates their evidence into the conformance gate.
+
+`tests/invariants/test_v5_conformance_invariants.py` adds generative checks for
+record ordering, qualifier-map ordering, all declared endpoint families,
+Credential `YearMonth` values across years 1–9999, and valid versus impossible
+temporal containment.
+
+### 9.7 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 435
+tests (389 retained plus 46 Phase 5 scenarios), formatting, Ruff, strict mypy,
+semantic/temporal examples, all existing viewers, and source/wheel builds.
+
+No runtime API, ontology identifier, package version, query behavior, example,
+viewer, serialization, or migration capability changes in this phase. The
+private `5.0-dev` identity remains in force; Phase 6 ports retained query
+behavior before later visualization, legacy removal, and public promotion.
 
 ## 10. Phase 6 — Port retained query behavior
 
