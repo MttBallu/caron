@@ -27,7 +27,7 @@ from caron import (
 )
 
 V5_ONTOLOGY_ID = "caron.career-model"
-V5_DEVELOPMENT_VERSION = "5.0-dev"
+V5_VERSION = "5.0"
 
 
 def labelled(
@@ -88,12 +88,12 @@ def v5_candidate(
     candidate_id: str = "realisation:v5-focused",
     scope: str = "Focused ontology 5.0 conformance fixture",
 ) -> RealisationCandidate:
-    """Build an immutable candidate targeting the private development schema."""
+    """Build an immutable candidate targeting exact ontology 5.0."""
 
     return RealisationCandidate(
         candidate_id,
         V5_ONTOLOGY_ID,
-        V5_DEVELOPMENT_VERSION,
+        V5_VERSION,
         entities,
         relations,
         Coverage(CoverageStatus.SELECTIVE, scope),

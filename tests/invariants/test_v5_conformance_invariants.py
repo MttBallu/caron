@@ -1,4 +1,4 @@
-"""Generative conformance checks for the complete 5.0-dev validator."""
+"""Generative conformance checks for the complete 5.0 validator."""
 
 from dataclasses import replace
 
@@ -21,7 +21,7 @@ from caron import (
     YearMonth,
     validate_candidate,
 )
-from caron.ontology import RelationDefinition, _career_ontology_v5_0_development
+from caron.ontology import RelationDefinition, career_ontology_v5_0
 from tests.fixtures.v5 import (
     assertion,
     credential_candidate,
@@ -31,7 +31,7 @@ from tests.fixtures.v5 import (
     v5_candidate,
 )
 
-SCHEMA = _career_ontology_v5_0_development()
+SCHEMA = career_ontology_v5_0()
 CONCEPT_KINDS = tuple(concept.id for concept in SCHEMA.concepts)
 RELATION_KINDS = tuple(relation.kind for relation in SCHEMA.relations)
 

@@ -23,7 +23,7 @@ from caron import (
     validate_candidate,
 )
 from caron._career_v5_invariants import semantic_relation_key
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 
 
 def _entity(
@@ -63,7 +63,7 @@ def _candidate(
     return RealisationCandidate(
         id="phase-4-test",
         ontology_id="caron.career-model",
-        ontology_version="5.0-dev",
+        ontology_version="5.0",
         entities=entities,
         relations=relations,
         coverage=Coverage(CoverageStatus.SELECTIVE, "Phase 4 focused fixture"),
@@ -71,7 +71,7 @@ def _candidate(
 
 
 def _result(candidate: RealisationCandidate) -> Accepted | Rejected:
-    return validate_candidate(_career_ontology_v5_0_development(), candidate)
+    return validate_candidate(career_ontology_v5_0(), candidate)
 
 
 def _codes(result: Rejected) -> list[str]:

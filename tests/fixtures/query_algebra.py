@@ -13,7 +13,7 @@ from caron import (
     validate_candidate,
 )
 from caron.entities import PropertyValue
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 from tests.fixtures.v5 import assertion, v5_candidate
 
 
@@ -224,9 +224,7 @@ def query_algebra_candidate() -> RealisationCandidate:
 
 
 def validated_query_algebra_fixture() -> ValidatedRealisation:
-    result = validate_candidate(
-        _career_ontology_v5_0_development(), query_algebra_candidate()
-    )
+    result = validate_candidate(career_ontology_v5_0(), query_algebra_candidate())
     if not isinstance(result, Accepted):
         raise AssertionError(result.diagnostics)
     return result.realisation

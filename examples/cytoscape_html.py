@@ -31,12 +31,12 @@ from caron import (
     TemporalWindow,
     UnknownEnd,
     YearMonth,
-    model_v0_5_ontology,
     select_activities_in_window,
     select_whole_realisation,
     validate_candidate,
 )
 from caron.entities import PropertyValue
+from caron.ontology import career_ontology_v5_0
 from examples.semantic_spine import build_candidate as build_semantic_spine_candidate
 from examples.semantic_spine import validate_example
 from examples.temporal_queries import build_candidate as build_temporal_candidate
@@ -47,15 +47,18 @@ _DEFAULT_TEMPLATE = Path(__file__).with_name("cytoscape_template.html")
 
 _KIND_APPEARANCE: dict[str, tuple[str, str]] = {
     "Person": ("#7c3aed", "ellipse"),
+    "Collective": ("#a21caf", "ellipse"),
     "Context": ("#0369a1", "round-rectangle"),
     "Activity": ("#047857", "round-rectangle"),
     "Technology": ("#b45309", "hexagon"),
     "Method": ("#be123c", "diamond"),
     "Subject": ("#6d28d9", "tag"),
+    "Language": ("#0891b2", "hexagon"),
     "Artifact": ("#475569", "rectangle"),
     "Proposition": ("#c2410c", "diamond"),
     "Organization": ("#0f766e", "round-rectangle"),
     "Place": ("#4338ca", "ellipse"),
+    "Credential": ("#ca8a04", "diamond"),
     "ContextualRelation": ("#2563eb", "diamond"),
 }
 
@@ -69,7 +72,7 @@ def _two_contexts_view() -> GraphView[object]:
 
 
 def _temporal_window_view() -> GraphView[object]:
-    validation = validate_candidate(model_v0_5_ontology(), build_temporal_candidate())
+    validation = validate_candidate(career_ontology_v5_0(), build_temporal_candidate())
     if not isinstance(validation, Accepted):
         details = "\n".join(
             f"- {item.code}: {item.message}" for item in validation.diagnostics

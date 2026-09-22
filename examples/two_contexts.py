@@ -1,9 +1,9 @@
-"""Two career contexts connected by practical use of Python.
+"""Two ontology 5.0 career contexts connected by practical use of Python.
 
-The example follows the Model 4 Python trajectory: ALICE data analysis during
-an MSc and later synthetic-data work during a PhD both use the same Python
-entity. Context is supplied by activities and their ``occurs_in`` relations;
-no primitive transfer or decontextualized person-skill relation is asserted.
+ALICE data analysis during an MSc and later synthetic-data work during a PhD
+both use the same Python entity. Context is supplied by activities and their
+``occurs_in`` relations; no primitive transfer or decontextualized
+person-skill relation is asserted.
 """
 
 from caron import (
@@ -22,15 +22,16 @@ from caron import (
     Qualifier,
     RealisationCandidate,
     RelationAssertion,
-    model4_ontology,
+    TemporalExtent,
 )
+from caron.ontology import career_ontology_v5_0
 from examples.semantic_spine import labelled
 
 
 def build_candidate() -> RealisationCandidate:
     """Build two evidence-rich activities joined by one Python entity."""
 
-    ontology = model4_ontology()
+    ontology = career_ontology_v5_0()
     person = labelled("person:matteo", PERSON, "Mattéo")
 
     alice_context = Entity(
@@ -38,7 +39,10 @@ def build_candidate() -> RealisationCandidate:
         kind=CONTEXT,
         properties=(
             Property("label", "MSc — ALICE data-analysis project"),
-            Property("status", "completed"),
+            Property(
+                "temporal_extent",
+                TemporalExtent.closed("2021-11", "2022-02"),
+            ),
         ),
     )
     synthetic_data_context = Entity(
@@ -46,7 +50,10 @@ def build_candidate() -> RealisationCandidate:
         kind=CONTEXT,
         properties=(
             Property("label", "PhD — synthetic-data work"),
-            Property("status", "completed"),
+            Property(
+                "temporal_extent",
+                TemporalExtent.closed("2022-10", "2025-10"),
+            ),
         ),
     )
 
@@ -118,7 +125,10 @@ def build_candidate() -> RealisationCandidate:
             "participates_in",
             EntityRef(person.id),
             EntityRef(alice_context.id),
-            (Qualifier("role", "MSc student researcher"),),
+            (
+                Qualifier("role", "MSc student researcher"),
+                Qualifier("organization", EntityRef(alice_collaboration.id)),
+            ),
         ),
         RelationAssertion(
             "relation:participates-in-synthetic-data-work",
@@ -153,19 +163,20 @@ def build_candidate() -> RealisationCandidate:
         ),
         RelationAssertion(
             "relation:alice-project-associated-with-collaboration",
-            "associated_with",
-            EntityRef(alice_context.id),
+            "organization_association",
             EntityRef(alice_collaboration.id),
+            EntityRef(alice_context.id),
+            (Qualifier("role", "host collaboration"),),
         ),
         RelationAssertion(
             "relation:alice-analysis-uses-python",
-            "uses",
+            "uses_technology",
             EntityRef(analyse_alice_data.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
             "relation:alice-analysis-uses-root",
-            "uses",
+            "uses_technology",
             EntityRef(analyse_alice_data.id),
             EntityRef(root.id),
         ),
@@ -189,25 +200,25 @@ def build_candidate() -> RealisationCandidate:
         ),
         RelationAssertion(
             "relation:dataset-build-uses-python",
-            "uses",
+            "uses_technology",
             EntityRef(build_training_dataset.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
             "relation:dataset-build-uses-polars",
-            "uses",
+            "uses_technology",
             EntityRef(build_training_dataset.id),
             EntityRef(polars.id),
         ),
         RelationAssertion(
             "relation:dataset-build-uses-hdf5",
-            "uses",
+            "uses_technology",
             EntityRef(build_training_dataset.id),
             EntityRef(hdf5.id),
         ),
         RelationAssertion(
             "relation:dataset-build-uses-codebase",
-            "uses",
+            "uses_artifact",
             EntityRef(build_training_dataset.id),
             EntityRef(synthetic_codebase.id),
         ),

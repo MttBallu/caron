@@ -1,4 +1,4 @@
-"""Exercise Model 0.5 temporality on three Python-use contexts."""
+"""Exercise ontology 5.0 temporality on three Python-use contexts."""
 
 from caron import (
     ACTIVITY,
@@ -17,10 +17,10 @@ from caron import (
     TemporalWindow,
     before,
     covered_months,
-    model_v0_5_ontology,
     select_activities_in_window,
     validate_candidate,
 )
+from caron.ontology import career_ontology_v5_0
 from caron.temporal import TemporalExtent
 
 
@@ -31,7 +31,7 @@ def labelled(entity_id: str, kind: str, label: str) -> Entity:
 def build_candidate() -> RealisationCandidate:
     """Build the ALICE, PhD synthetic-data, and jax-geopro realisation."""
 
-    ontology = model_v0_5_ontology()
+    ontology = career_ontology_v5_0()
     person = labelled("person:matteo", PERSON, "Mattéo")
     alice = Entity(
         "context:alice-project",
@@ -127,19 +127,19 @@ def build_candidate() -> RealisationCandidate:
         ),
         RelationAssertion(
             "relation:alice-uses-python",
-            "uses",
+            "uses_technology",
             EntityRef(alice_activity.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
             "relation:synthetic-uses-python",
-            "uses",
+            "uses_technology",
             EntityRef(synthetic_activity.id),
             EntityRef(python.id),
         ),
         RelationAssertion(
             "relation:jax-uses-python",
-            "uses",
+            "uses_technology",
             EntityRef(jax_activity.id),
             EntityRef(python.id),
         ),
@@ -168,7 +168,7 @@ def build_candidate() -> RealisationCandidate:
 
 
 def main() -> None:
-    validation = validate_candidate(model_v0_5_ontology(), build_candidate())
+    validation = validate_candidate(career_ontology_v5_0(), build_candidate())
     if not isinstance(validation, Accepted):
         for diagnostic in validation.diagnostics:
             print(f"[{diagnostic.code}] {diagnostic.message}")

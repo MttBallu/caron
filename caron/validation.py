@@ -382,7 +382,7 @@ def _validate_local_records(
     """Diagnose record shape, identity, and references without accepting a graph.
 
     This private stage also supports isolated checks against an incomplete
-    development schema. An empty result is not realisation conformance:
+    test schema. An empty result is not realisation conformance:
     only ``validate_candidate`` can produce a validated value.
     """
 

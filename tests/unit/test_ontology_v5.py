@@ -21,8 +21,8 @@ from caron import (
     validate_candidate,
     validate_ontology,
 )
-from caron.ontology import _career_ontology_v5_0_development
-from tests.fixtures.minimal import minimal_candidate
+from caron.ontology import career_ontology_v5_0
+from tests.fixtures.v5 import minimal_v5_candidate
 
 type FieldSignature = tuple[str, str, bool, tuple[str, ...]]
 type RelationSignature = tuple[
@@ -126,7 +126,7 @@ EXPECTED_INVARIANTS = frozenset(
 
 @pytest.fixture
 def schema() -> OntologySchema:
-    return _career_ontology_v5_0_development()
+    return career_ontology_v5_0()
 
 
 def _field_signature(
@@ -140,22 +140,25 @@ def _field_signature(
     )
 
 
-def test_catalogue_has_explicit_development_identity(schema: OntologySchema) -> None:
+def test_catalogue_has_exact_accepted_identity(schema: OntologySchema) -> None:
     assert schema.id == "caron.career-model"
-    assert schema.version == "5.0-dev"
-    assert schema.version != "5.0"
-    assert schema == _career_ontology_v5_0_development()
+    assert schema.version == "5.0"
+    assert schema == career_ontology_v5_0()
 
 
-def test_new_concept_constants_are_public_but_v5_factory_is_not() -> None:
+def test_new_concept_constants_and_v5_factory_are_public() -> None:
     assert (COLLECTIVE, LANGUAGE, CREDENTIAL) == (
         "Collective",
         "Language",
         "Credential",
     )
-    assert {"COLLECTIVE", "LANGUAGE", "CREDENTIAL"} <= set(caron.__all__)
-    assert not hasattr(caron, "career_ontology_v5_0")
-    assert not hasattr(caron, "_career_ontology_v5_0_development")
+    assert {
+        "COLLECTIVE",
+        "LANGUAGE",
+        "CREDENTIAL",
+        "career_ontology_v5_0",
+    } <= set(caron.__all__)
+    assert caron.career_ontology_v5_0 is career_ontology_v5_0
 
 
 def test_concept_inventory_is_exact(schema: OntologySchema) -> None:
@@ -259,17 +262,17 @@ def test_interpretive_concepts_are_absent(schema: OntologySchema, kind: str) -> 
     assert schema.concept(kind) is None
 
 
-def test_complete_development_schema_passes_self_validation(
+def test_complete_schema_passes_self_validation(
     schema: OntologySchema,
 ) -> None:
     assert validate_ontology(schema) == ()
 
 
-@pytest.mark.parametrize("version", ("4", "0.5", "5.0"))
+@pytest.mark.parametrize("version", ("4", "0.5", "5.0-dev", "5.1"))
 def test_exact_version_mismatch_prevents_candidate_acceptance(
     schema: OntologySchema, version: str
 ) -> None:
-    candidate = replace(minimal_candidate(), ontology_version=version)
+    candidate = replace(minimal_v5_candidate(), ontology_version=version)
     result = validate_candidate(schema, candidate)
 
     assert isinstance(result, Rejected)
@@ -278,9 +281,9 @@ def test_exact_version_mismatch_prevents_candidate_acceptance(
     ]
 
 
-def test_conforming_development_candidate_can_be_accepted(
+def test_conforming_candidate_can_be_accepted(
     schema: OntologySchema,
 ) -> None:
-    candidate = replace(minimal_candidate(), ontology_version="5.0-dev")
-
-    assert isinstance(validate_candidate(schema, candidate), caron.Accepted)
+    assert isinstance(
+        validate_candidate(schema, minimal_v5_candidate()), caron.Accepted
+    )

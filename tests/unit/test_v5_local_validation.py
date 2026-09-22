@@ -1,4 +1,4 @@
-"""Diagnostic-only record checks against the complete 5.0-dev catalogue.
+"""Diagnostic-only record checks against the complete 5.0 catalogue.
 
 These deliberately do not remove pending declarations or claim acceptance of
 a partial implementation. Full candidate conformance belongs to later phases.
@@ -26,7 +26,7 @@ from caron import (
     YearMonth,
 )
 from caron.entities import PropertyValue
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 from caron.validation import _validate_local_records
 
 KINDS = (
@@ -63,7 +63,7 @@ def _candidate(
     return RealisationCandidate(
         id="local-record-test",
         ontology_id="caron.career-model",
-        ontology_version="5.0-dev",
+        ontology_version="5.0",
         entities=entities,
         relations=relations,
         coverage=Coverage(CoverageStatus.SELECTIVE, "Local record checks only"),
@@ -71,7 +71,7 @@ def _candidate(
 
 
 def _local(candidate: RealisationCandidate) -> tuple[Diagnostic, ...]:
-    return _validate_local_records(_career_ontology_v5_0_development(), candidate)
+    return _validate_local_records(career_ontology_v5_0(), candidate)
 
 
 def _assert_issue(

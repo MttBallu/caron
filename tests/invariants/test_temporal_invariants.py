@@ -16,7 +16,7 @@ from caron import (
     covered_months,
     validate_candidate,
 )
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 from tests.fixtures.temporal_v5 import temporal_v5_candidate
 
 
@@ -58,7 +58,7 @@ def test_exact_covered_month_count_is_inclusive_and_positive(
         candidate,
         entities=(candidate.entities[0], generated_alice, *candidate.entities[2:]),
     )
-    result = validate_candidate(_career_ontology_v5_0_development(), generated)
+    result = validate_candidate(career_ontology_v5_0(), generated)
     assert isinstance(result, Accepted)
 
     count = covered_months(result.realisation, generated_alice.id)
@@ -107,9 +107,7 @@ def test_every_closed_child_inside_parent_is_accepted(
         ),
     )
 
-    assert isinstance(
-        validate_candidate(_career_ontology_v5_0_development(), generated), Accepted
-    )
+    assert isinstance(validate_candidate(career_ontology_v5_0(), generated), Accepted)
 
 
 @given(offset=st.integers(min_value=1, max_value=120))
@@ -136,7 +134,7 @@ def test_child_starting_after_parent_is_never_accepted(offset: int) -> None:
         ),
     )
 
-    result = validate_candidate(_career_ontology_v5_0_development(), generated)
+    result = validate_candidate(career_ontology_v5_0(), generated)
 
     assert isinstance(result, Rejected)
     assert "realisation.temporal_containment_impossible" in {

@@ -7,7 +7,7 @@ properties, and relation edges show every allowed source/target kind pair.
 Run from the project root with::
 
     uv run python -m examples.ontology_schema_html
-    uv run python -m examples.ontology_schema_html --version 4
+    uv run python -m examples.ontology_schema_html --version 5.0
 """
 
 import argparse
@@ -19,24 +19,26 @@ from caron import (
     PropertyDefinition,
     QualifierDefinition,
     RelationRequirement,
-    model4_ontology,
-    model_v0_5_ontology,
 )
+from caron.ontology import career_ontology_v5_0
 
 _TEMPLATE_TOKEN = "__CARON_ONTOLOGY_DATA__"
 _DEFAULT_TEMPLATE = Path(__file__).with_name("ontology_schema_template.html")
 
 _CONCEPT_APPEARANCE: dict[str, tuple[str, str]] = {
     "Person": ("#7c3aed", "ellipse"),
+    "Collective": ("#a21caf", "ellipse"),
     "Context": ("#0369a1", "round-rectangle"),
     "Activity": ("#047857", "round-rectangle"),
     "Technology": ("#b45309", "hexagon"),
     "Method": ("#be123c", "diamond"),
     "Subject": ("#6d28d9", "tag"),
+    "Language": ("#0891b2", "hexagon"),
     "Artifact": ("#475569", "rectangle"),
     "Proposition": ("#c2410c", "diamond"),
     "Organization": ("#0f766e", "round-rectangle"),
     "Place": ("#4338ca", "ellipse"),
+    "Credential": ("#ca8a04", "diamond"),
 }
 
 
@@ -198,10 +200,8 @@ def render_ontology_schema_html(
 
 
 def _ontology_for_version(version: str) -> OntologySchema:
-    if version == "4":
-        return model4_ontology()
-    if version == "0.5":
-        return model_v0_5_ontology()
+    if version == "5.0":
+        return career_ontology_v5_0()
     raise ValueError(f"Unsupported ontology version: {version}")
 
 
@@ -211,9 +211,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--version",
-        choices=("4", "0.5"),
-        default="0.5",
-        help="Executable ontology version to render (default: 0.5)",
+        choices=("5.0",),
+        default="5.0",
+        help="Executable ontology version to render (default: 5.0)",
     )
     parser.add_argument(
         "--output",

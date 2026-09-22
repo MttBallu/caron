@@ -110,22 +110,6 @@ ORGANIZATION = "Organization"
 PLACE = "Place"
 CREDENTIAL = "Credential"
 
-# Legacy compact inventory; inspect schema.concepts for a version's vocabulary.
-ALL_CONCEPTS = frozenset(
-    {
-        PERSON,
-        CONTEXT,
-        ACTIVITY,
-        TECHNOLOGY,
-        METHOD,
-        SUBJECT,
-        ARTIFACT,
-        PROPOSITION,
-        ORGANIZATION,
-        PLACE,
-    }
-)
-
 
 def _labelled(
     concept_id: ConceptId, *properties: PropertyDefinition
@@ -148,137 +132,13 @@ def _context_qualifier() -> QualifierDefinition:
     )
 
 
-def model4_ontology() -> OntologySchema:
-    """Return the explicit schema for the first executable career model."""
-
-    concepts = (
-        _labelled(PERSON),
-        _labelled(
-            CONTEXT,
-            PropertyDefinition("start", ValueKind.INTEGER),
-            PropertyDefinition("end", ValueKind.INTEGER),
-            PropertyDefinition("status", ValueKind.TEXT),
-        ),
-        _labelled(ACTIVITY),
-        _labelled(TECHNOLOGY),
-        _labelled(METHOD),
-        _labelled(SUBJECT),
-        _labelled(ARTIFACT),
-        _labelled(
-            PROPOSITION,
-            PropertyDefinition("content", ValueKind.TEXT, required=True),
-            PropertyDefinition(
-                "context",
-                ValueKind.ENTITY_REFERENCE,
-                required=True,
-                allowed_reference_kinds=frozenset({CONTEXT}),
-            ),
-        ),
-        _labelled(ORGANIZATION),
-        _labelled(PLACE),
-    )
-
-    relations = (
-        RelationDefinition("part_of", frozenset({CONTEXT}), frozenset({CONTEXT})),
-        RelationDefinition(
-            "participates_in",
-            frozenset({PERSON}),
-            frozenset({CONTEXT}),
-            qualifiers=(QualifierDefinition("role", ValueKind.TEXT),),
-        ),
-        RelationDefinition("performs", frozenset({PERSON}), frozenset({ACTIVITY})),
-        RelationDefinition("occurs_in", frozenset({ACTIVITY}), frozenset({CONTEXT})),
-        RelationDefinition(
-            "exposed_to",
-            frozenset({PERSON}),
-            frozenset({TECHNOLOGY, METHOD, SUBJECT}),
-            qualifiers=(_context_qualifier(),),
-        ),
-        RelationDefinition(
-            "learns",
-            frozenset({PERSON}),
-            frozenset({TECHNOLOGY, METHOD, SUBJECT}),
-            qualifiers=(_context_qualifier(),),
-        ),
-        RelationDefinition(
-            "uses", frozenset({ACTIVITY}), frozenset({TECHNOLOGY, ARTIFACT})
-        ),
-        RelationDefinition("takes_input", frozenset({ACTIVITY}), frozenset({ARTIFACT})),
-        RelationDefinition("produces", frozenset({ACTIVITY}), frozenset({ARTIFACT})),
-        RelationDefinition("applies", frozenset({ACTIVITY}), frozenset({METHOD})),
-        RelationDefinition(
-            "draws_on", frozenset({ACTIVITY}), frozenset({METHOD, SUBJECT})
-        ),
-        RelationDefinition("aims_at", frozenset({CONTEXT}), frozenset({PROPOSITION})),
-        RelationDefinition(
-            "results_in", frozenset({ACTIVITY}), frozenset({PROPOSITION})
-        ),
-        RelationDefinition(
-            "establishes", frozenset({ACTIVITY}), frozenset({PROPOSITION})
-        ),
-        RelationDefinition("supports", frozenset({ACTIVITY}), frozenset({PROPOSITION})),
-        RelationDefinition(
-            "contradicts", frozenset({ACTIVITY}), frozenset({PROPOSITION})
-        ),
-        RelationDefinition(
-            "motivates", frozenset({PROPOSITION}), frozenset({ACTIVITY, CONTEXT})
-        ),
-        RelationDefinition(
-            "associated_with", frozenset({CONTEXT}), frozenset({ORGANIZATION})
-        ),
-        RelationDefinition("occurs_at", frozenset({CONTEXT}), frozenset({PLACE})),
-    )
-
-    requirements = (
-        RelationRequirement(ACTIVITY, "performs", EndpointPosition.TARGET, minimum=1),
-        RelationRequirement(
-            ACTIVITY,
-            "occurs_in",
-            EndpointPosition.SOURCE,
-            minimum=1,
-            maximum=1,
-        ),
-    )
-
-    return OntologySchema(
-        id="caron.career-model",
-        version="4",
-        concepts=concepts,
-        relations=relations,
-        requirements=requirements,
-    )
-
-
-def model_v0_5_ontology() -> OntologySchema:
-    """Return career model v0.5 with month-level context temporality."""
-
-    predecessor = model4_ontology()
-    concepts = tuple(
-        _labelled(
-            CONTEXT,
-            PropertyDefinition("temporal_extent", ValueKind.TEMPORAL_EXTENT),
-        )
-        if concept.id == CONTEXT
-        else concept
-        for concept in predecessor.concepts
-    )
-    return OntologySchema(
-        id=predecessor.id,
-        version="0.5",
-        concepts=concepts,
-        relations=predecessor.relations,
-        requirements=predecessor.requirements,
-    )
-
-
-def _career_ontology_v5_0_development() -> OntologySchema:
-    """Return the complete 5.0 catalogue under a development-only identity.
+def career_ontology_v5_0() -> OntologySchema:
+    """Return the accepted Career Ontology 5.0 schema.
 
     The accepted specification sections 7–11 are the source of these
     declarations. Families are endpoint unions, never additional concepts.
-    Missing invariant handlers deliberately prevent candidate acceptance.
-    Exposing ``career_ontology_v5_0()`` with version ``5.0`` must wait for the
-    full conformance gate in specification section 16.1.
+    All declared invariant handlers are implemented and the complete section
+    16.1 conformance gate has passed.
     """
 
     agent_kinds = frozenset({PERSON, COLLECTIVE})
@@ -439,7 +299,7 @@ def _career_ontology_v5_0_development() -> OntologySchema:
 
     return OntologySchema(
         id="caron.career-model",
-        version="5.0-dev",
+        version="5.0",
         concepts=concepts,
         relations=relations,
         requirements=requirements,

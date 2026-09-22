@@ -23,15 +23,13 @@ from caron import (
     select_activities_in_window,
     validate_candidate,
 )
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 from tests.fixtures.temporal_v5 import temporal_v5_candidate
 from tests.fixtures.v5 import labelled
 
 
 def _realisation() -> ValidatedRealisation:
-    result = validate_candidate(
-        _career_ontology_v5_0_development(), temporal_v5_candidate()
-    )
+    result = validate_candidate(career_ontology_v5_0(), temporal_v5_candidate())
     assert isinstance(result, Accepted)
     return result.realisation
 
@@ -139,7 +137,7 @@ def test_definite_window_selects_only_entailed_activity() -> None:
         "activity:analyse-alice-data",
     )
     assert {relation.kind for relation in view.relations} == {"occurs_in"}
-    assert view.ontology.version == "5.0-dev"
+    assert view.ontology.version == "5.0"
 
 
 def test_possible_window_returns_partial_context_matches() -> None:
@@ -237,7 +235,7 @@ def test_unconstrained_activity_is_unknown_and_excluded_by_default() -> None:
         entities=candidate.entities + (context, activity),
         relations=candidate.relations + (performs, occurs_in),
     )
-    validated = validate_candidate(_career_ontology_v5_0_development(), extended)
+    validated = validate_candidate(career_ontology_v5_0(), extended)
     assert isinstance(validated, Accepted)
 
     default_view = select_activities_in_window(
@@ -286,7 +284,7 @@ def test_unknown_end_count_is_indeterminate() -> None:
         ),
     )
     validated = validate_candidate(
-        _career_ontology_v5_0_development(),
+        career_ontology_v5_0(),
         replace(candidate, entities=candidate.entities + (context,)),
     )
     assert isinstance(validated, Accepted)

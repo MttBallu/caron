@@ -25,8 +25,7 @@ from caron.ontology import (
     RelationDefinition,
     RelationRequirement,
     ValueKind,
-    model4_ontology,
-    model_v0_5_ontology,
+    career_ontology_v5_0,
 )
 from caron.queries import (
     CoveredMonthKind,
@@ -121,9 +120,8 @@ __all__ = [
     "ValueKind",
     "YearMonth",
     "before",
+    "career_ontology_v5_0",
     "covered_months",
-    "model4_ontology",
-    "model_v0_5_ontology",
     "overlaps",
     "select_activities_in_window",
     "select_whole_realisation",

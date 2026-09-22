@@ -1,12 +1,12 @@
 ---
 kind: implementation_plan
-status: active
+status: accepted_awaiting_push_and_review
 date: 2026-09-22
 ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_7_examples_visualization
+current_phase: phase_10_accepted_awaiting_push
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -54,7 +54,7 @@ A phase is complete only when its acceptance gate passes.
 - [x] Run the complete pre-change verification gate.
 - [x] Record the pre-`1.0` compatibility policy in `CURRENT.md`.
 - [x] Record that migration support is outside this increment.
-- [ ] Classify legacy tests while porting them as retained, superseded, or
+- [x] Classify legacy tests while porting them as retained, superseded, or
       historical.
 - [x] Keep legacy schema builders temporarily available during the port.
 
@@ -532,77 +532,213 @@ viewers intentionally remain on the legacy schemas until Phase 7.
 
 ### 11.1 Ontology-schema viewer
 
-- [ ] Add appearances for the three new concepts.
-- [ ] Render ontology `5.0`.
-- [ ] Verify 13 nodes, 31 relation rules, and 41 expanded endpoint edges.
-- [ ] Display all six cardinalities.
-- [ ] Display the global-invariant inventory.
+- [x] Add appearances for the three new concepts.
+- [x] Render ontology `5.0`.
+- [x] Verify 13 nodes, 31 relation rules, and 41 expanded endpoint edges.
+- [x] Display all six cardinalities.
+- [x] Display the global-invariant inventory.
 
 ### 11.2 Realisation viewer
 
-- [ ] Serialize `YearMonth` properties.
-- [ ] Render Collective, Language, and Credential entities.
-- [ ] Preserve reference-valued qualifier display.
-- [ ] Preserve temporal-result and witness display.
-- [ ] Add a representative `5.0` career graph.
-- [ ] Keep renderer JSON outside persistence contracts.
+- [x] Serialize `YearMonth` properties.
+- [x] Render Collective, Language, and Credential entities.
+- [x] Preserve reference-valued qualifier display.
+- [x] Preserve temporal-result and witness display.
+- [x] Add a representative `5.0` career graph.
+- [x] Keep renderer JSON outside persistence contracts.
 
 ### 11.3 Maintained examples
 
-- [ ] Replace the Model 4 semantic-spine example with a `5.0` example.
-- [ ] Port the two-context reusable-technology example.
-- [ ] Port the temporal-query example.
-- [ ] Update terminology and commands.
-- [ ] Run all maintained examples and viewers from `tools/verify.py`.
+- [x] Replace the Model 4 semantic-spine example with a `5.0` example.
+- [x] Port the two-context reusable-technology example.
+- [x] Port the temporal-query example.
+- [x] Update terminology and commands.
+- [x] Run all maintained examples and viewers from `tools/verify.py`.
 
-Acceptance gate: every maintained example and viewer is generated from the
-`5.0` implementation.
+Acceptance gate passed: every maintained example and viewer is generated from
+the ontology `5.0-dev` implementation candidate.
+
+### 11.4 Example and viewer boundary
+
+The ontology-schema viewer now renders only the maintained implementation
+candidate. Its graph contains all 13 concepts, 31 relation rules, and 41
+expanded endpoint pairs. Collective, Language, and Credential have explicit
+appearances. The sidebar displays the complete inventories of six cardinality
+requirements and eight declared global invariants rather than leaving them
+only in the embedded data.
+
+The semantic-spine example is a representative selective career graph using
+all 13 concept kinds. It includes personal and collective performance,
+Language use, an Organization reference qualifier, a Place, and a particular
+Credential award with a typed `YearMonth`. The two-context example uses typed
+Technology and Artifact use relations, and the temporal example uses the
+ontology `5.0` vocabulary and validation boundary.
+
+The example-coupled temporal-validation suite was classified during the port:
+its seven retained validation behaviors now run on `5.0-dev`; the old test
+whose sole purpose was to compare executable versions `4` and `0.5` was
+superseded by a check of the integrated Context temporal property. Remaining
+legacy-only tests are classified when their schemas are removed in Phase 8.
+
+The realisation adapter preserves reference-valued qualifiers, structured
+`YearMonth` and `TemporalExtent` values, temporal classifications, and their
+witness records. Its output remains renderer-specific JSON under `examples/`;
+it is not a semantic codec, persistence format, or public package contract.
+The exact public ontology identity remains gated on the later promotion phase,
+so these examples correctly identify the executable candidate as `5.0-dev`.
+
+### 11.5 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 441
+tests, formatting, Ruff, strict mypy, the semantic and temporal examples, all
+three realisation viewers, the ontology `5.0-dev` schema viewer, and source and
+wheel builds. Focused renderer tests verify the catalogue counts, all
+cardinality and invariant declarations, the three new concept appearances,
+the integrated Credential award month, navigable Organization qualifier, and
+temporal witness payload and inspector display.
 
 ## 12. Phase 8 — Remove legacy executable schemas
 
-- [ ] Remove `model4_ontology()`.
-- [ ] Remove `model_v0_5_ontology()`.
-- [ ] Remove their public exports.
-- [ ] Remove or rename misleading legacy-only constants.
-- [ ] Remove obsolete fixtures and tests.
-- [ ] Record every removal as ported, superseded, or historical.
-- [ ] Remove compact `uses` and `associated_with` from executable code.
-- [ ] Remove legacy Context start, end, and status from executable code.
-- [ ] Retain historical design documents and lineage references.
+- [x] Remove `model4_ontology()`.
+- [x] Remove `model_v0_5_ontology()`.
+- [x] Remove their public exports.
+- [x] Remove or rename misleading legacy-only constants.
+- [x] Remove obsolete fixtures and tests.
+- [x] Record every removal as ported, superseded, or historical.
+- [x] Remove compact `uses` and `associated_with` from executable code.
+- [x] Remove legacy Context start, end, and status from executable code.
+- [x] Retain historical design documents and lineage references.
 
-Acceptance gate: the runtime package contains one maintained ontology and no
-accidental legacy support surface.
+Acceptance gate passed: the runtime package contains one maintained ontology
+implementation candidate and no accidental legacy support surface.
+
+### 12.1 Removal and classification record
+
+| Legacy item | Classification | Phase 8 disposition |
+|---|---|---|
+| `model4_ontology()` and `model_v0_5_ontology()` | Historical | Removed from `caron/ontology.py` and the public package exports; their specifications and Git history remain authoritative historical evidence. |
+| Compact `ALL_CONCEPTS` inventory | Superseded | Removed because it omitted Collective, Language, and Credential; consumers inspect `OntologySchema.concepts`. |
+| Compact `uses` and `associated_with` relation rules | Superseded | Removed with the legacy builders; typed use and organization-association rules remain in `5.0-dev`. |
+| Context `start`, `end`, and `status` fields | Superseded | Removed with Model 4; Context has the optional typed `temporal_extent` property. |
+| `tests/fixtures/minimal.py` | Ported and consolidated | Replaced by `minimal_v5_candidate()` and the builders in `tests/fixtures/v5.py`. |
+| Generic ontology, validation, and meta-model tests | Ported | Rebased on the complete `5.0-dev` schema and minimal candidate. |
+| Legacy generative validation suite | Superseded | Removed: dangling-reference coverage lives in local 5.0 validation tests, endpoint-family generation and order independence live in the 5.0 conformance invariants. |
+| Model 4 versus `0.5` temporal comparison | Historical | Superseded during Phase 7 by the integrated Context temporal-property check. |
+| M1-A, Model 4, and v0.5 design documents | Historical | Retained unchanged as design lineage; they are not executable package surfaces. |
+
+This removal is intentionally breaking under the accepted pre-`1.0` policy.
+No compatibility shim, alias, decoder, or data migration is introduced. The
+private `5.0-dev` factory remains the only schema builder until the exact
+public `5.0` promotion in the final acceptance phase.
+
+### 12.2 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 439
+tests, formatting, Ruff, strict mypy, both maintained examples, all three
+realisation viewers, the ontology `5.0-dev` schema viewer, and source and wheel
+builds. An explicit regression asserts that `model4_ontology`,
+`model_v0_5_ontology`, and `ALL_CONCEPTS` are absent from both the package API
+and ontology module. Source searches confirm that compact relation rules and
+legacy Context field declarations no longer exist in executable code.
 
 ## 13. Phase 9 — Documentation and release transition
 
-- [ ] Update `CURRENT.md` and the version ledger.
-- [ ] Mark ontology `5.0` as the current executable ontology.
-- [ ] Mark `4` and `0.5` as historical executable predecessors.
-- [ ] Record that compatibility guarantees begin no earlier than `caron 1.0`.
-- [ ] Keep migration explicitly deferred.
-- [ ] Update the package-boundary document and architecture-contract version.
-- [ ] Update the package implementation overview and README.
-- [ ] Update specification implementation-status metadata without changing
+- [x] Update `CURRENT.md` and the version ledger.
+- [x] Mark ontology `5.0` as the current executable ontology.
+- [x] Mark `4` and `0.5` as historical executable predecessors.
+- [x] Record that compatibility guarantees begin no earlier than `caron 1.0`.
+- [x] Keep migration explicitly deferred.
+- [x] Update the package-boundary document and architecture-contract version.
+- [x] Update the package implementation overview and README.
+- [x] Update specification implementation-status metadata without changing
       accepted ontology semantics.
-- [ ] Change the package version to `0.2.0` and refresh `uv.lock`.
-- [ ] Review and minimize `caron.__all__`.
+- [x] Change the package version to `0.2.0` and refresh `uv.lock`.
+- [x] Review and minimize `caron.__all__`.
+
+### 13.1 Verification record
+
+The release-transition documents now distinguish package `0.2.0`, current
+ontology generation `5.0`, and the private transitional runtime identity
+`5.0-dev`. They record architecture contract `0.3`, classify executable
+versions `4` and `0.5` as historical, defer migration, and make the pre-`1.0`
+compatibility boundary explicit. Specification changes are limited to
+implementation-status metadata and its accompanying status note; accepted
+ontology semantics are unchanged.
+
+The root export review retained the semantic records, ontology meta-model,
+validation results, typed temporal queries, and graph-view types needed by
+callers. Private schema construction, invariant registries and handlers,
+query-algebra plans, renderers, storage, serialization, and migration remain
+outside `caron.__all__`. An exact export-set regression now guards that
+boundary; the public exact `5.0` factory remains reserved for Phase 10.
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 440
+tests, formatting, Ruff, strict mypy across 43 source files, both maintained
+examples, all three realisation viewers, the ontology `5.0-dev` schema viewer,
+and `caron` `0.2.0` source and wheel builds.
 
 ## 14. Phase 10 — Final acceptance
 
-- [ ] Run formatting, Ruff, and strict mypy.
-- [ ] Run all deterministic and generative tests.
-- [ ] Run all maintained examples and viewers.
-- [ ] Build the source distribution and wheel.
-- [ ] Install the wheel in a clean temporary environment.
-- [ ] Smoke-test the installed public API.
-- [ ] Review the final implementation against every section 16.1 obligation.
-- [ ] Promote the private development factory to public
+- [x] Run formatting, Ruff, and strict mypy.
+- [x] Run all deterministic and generative tests.
+- [x] Run all maintained examples and viewers.
+- [x] Build the source distribution and wheel.
+- [x] Install the wheel in a clean temporary environment.
+- [x] Smoke-test the installed public API.
+- [x] Review the final implementation against every section 16.1 obligation.
+- [x] Promote the private development factory to public
       `career_ontology_v5_0()` with exact version `5.0` only after the full
       conformance gate passes; update tests, fixtures, examples, and viewers
       to the accepted identity and rerun the full gate.
-- [ ] Commit the acceptance transition.
+- [x] Commit the acceptance transition.
 - [ ] Push the implementation branch for review.
 - [ ] Merge only after the complete verification gate passes.
 
 Acceptance gate: `caron 0.2.0` implements the accepted ontology `5.0` without
 claiming deferred migration, storage, or query-contract capabilities.
+
+### 14.1 Section 16.1 conformance review
+
+| Obligation | Final evidence |
+|---|---|
+| 1. Exact identity | Public `career_ontology_v5_0()` returns `caron.career-model` / `5.0`; root-export and clean-wheel smoke tests exercise it. |
+| 2. Thirteen concepts and exact properties | `test_ontology_v5.py` independently enumerates every concept and property signature. |
+| 3. Thirty-one relations, endpoint unions, and qualifiers | `test_ontology_v5.py` independently enumerates all relation signatures and 41 expanded endpoint pairs. |
+| 4. Record identity and structural closure | `test_v5_local_validation.py` covers lexical identifiers, namespace uniqueness, required fields, value kinds, references, endpoints, and qualifiers. |
+| 5. Semantic relation-fact uniqueness | `test_v5_realisation_invariants.py` and generative conformance tests cover record-id independence and qualifier-order equivalence. |
+| 6. Activity and Credential cardinalities | Exact declaration tests and representative below/above-bound failures cover all six requirements. |
+| 7. Context and Organization acyclicity | Self-loop, long-cycle, and valid multiple-parent DAG tests cover both structural relations. |
+| 8. Proposition locality and `bears_on` | Same-context, nested-context, missing-role, sibling, reversed-direction, and self-reference cases are exercised. |
+| 9. Month-level temporality | Value, local-validation, transitive-containment, and generative temporal suites cover known, unknown, ongoing, contradictory, nested, and unconstrained cases. |
+| 10. Required non-inferences | The conformance suite independently checks performance, exposure, learning, use, artifact-role, outcome, `bears_on`, and temporal non-materialization boundaries. |
+| 11. Exact-version rejection | Catalogue tests reject historical `4`, `0.5`, and another exact version rather than relabelling candidates. |
+| 12. Derived results remain outside assertions | Temporal query and `GraphView` tests retain witnesses while the conformance suite verifies the positive relation set is unchanged. |
+| 13. Representative valid and invalid candidates | Minimal, rich all-vocabulary, focused invalid, deterministic, and Hypothesis-generated candidates all pass their expected outcomes. |
+
+The minimum scenario list following section 16.1 is covered across
+`test_v5_conformance.py`, `test_v5_local_validation.py`,
+`test_v5_realisation_invariants.py`, `test_temporal_validation.py`, and the two
+generative invariant suites. No section 15 exclusion was added to the
+ontology contract.
+
+### 14.2 Final verification record
+
+The unchanged private `5.0-dev` implementation first passed the complete
+pre-promotion gate with 440 tests. Only then was it renamed to the public
+`career_ontology_v5_0()` factory and assigned exact schema version `5.0`.
+Tests, fixtures, examples, viewers, package exports, and current-facing
+documents were updated to the accepted identity; historical phase records
+retain the development identity where it describes an earlier checkpoint.
+
+Final verification on 2026-09-22: `tools/verify.py` passes formatting, Ruff,
+strict mypy across 43 source files, all 441 deterministic and Hypothesis tests,
+both maintained examples, all three realisation viewers, and the exact
+ontology `5.0` schema viewer. It builds the `caron 0.2.0` source distribution
+and wheel, installs the wheel without dependencies in a clean temporary
+environment, and runs an isolated installed-API smoke test confirming package
+version `0.2.0`, public factory availability, exact schema identity, the
+13/31/6/8 catalogue counts, and ontology self-validation.
+
+The local acceptance gate is complete. Push and merge remain explicit
+repository workflow actions; the branch is ready for review without claiming
+migration, persistence, serialization, or a public query-plan contract.

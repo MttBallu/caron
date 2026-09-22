@@ -12,9 +12,10 @@ executable_predecessors:
   - "4"
   - "0.5"
 decision_record: career-ontology-m1b-semantic-decisions.md
-implementation_status: not_implemented
-current_package_version: "0.1.0"
-next_gate: ontology_5_0_implementation
+implementation_status: accepted_and_implemented
+implementation_schema_version: "5.0"
+current_package_version: "0.2.0"
+next_gate: post_0_2_0_roadmap
 ---
 
 # Career Ontology 5.0 — Normative Specification
@@ -55,12 +56,13 @@ non-inferences that determine whether a candidate is a valid ontology `5.0`
 realisation. It does not prescribe Python classes, serialization syntax,
 storage, query plans, visual layout, or interaction workflows.
 
-The current `caron` package remains version `0.1.0` and does not yet implement
-this ontology. A package must not expose `5.0` as an accepted schema until all
-ontology-conformance obligations in section 16.1 are implemented and tested.
+The current source tree is versioned as `caron` `0.2.0` and exposes the
+complete ontology implementation through public `career_ontology_v5_0()` with
+the exact schema identity `caron.career-model` / `5.0`.
 
 M1-C acceptance establishes the normative meaning and lineage of ontology
-`5.0`. It does not claim that any `caron` release implements that schema.
+`5.0`. The implementation-status metadata above records package progress; it
+does not alter the accepted ontology semantics in this document.
 
 The terms **MUST**, **MUST NOT**, **SHOULD**, and **MAY** express normative
 requirements in this document.
@@ -94,9 +96,9 @@ immutable schemas.
 | Identifier | Status in this lineage |
 |---|---|
 | Model 4.2 | Historical conceptual predecessor and semantic inventory |
-| `caron.career-model` version `4` | Preserved compact compatibility schema |
-| `caron.career-model` version `0.5` | Preserved compact schema with accepted month-level temporality |
-| `caron.career-model` version `5.0` | This integrated ontology generation |
+| `caron.career-model` version `4` | Historical compact executable predecessor |
+| `caron.career-model` version `0.5` | Historical temporal executable predecessor |
+| `caron.career-model` version `5.0` | Current integrated ontology generation |
 
 The strings `4`, `0.5`, and `5.0` MUST be compared exactly, not numerically.
 Existing `4` and `0.5` realisations retain their original meaning. They MUST
@@ -821,10 +823,9 @@ invariants, CQ1–CQ12 representational consequences, migration rules, layer
 boundaries, and conformance obligations.
 
 Acceptance makes this document the normative authority for ontology `5.0`.
-It does not change the current package version or executable schema support.
+It does not couple the ontology version to a package release identifier.
 
-The package release implementing ontology `5.0` is assigned separately from
-this specification. Until an implementing package passes ontology conformance
-and every additional contract or feature gate it advertises, the current
-executable authorities remain ontology versions `4` and `0.5` in `caron`
-`0.1.0`.
+The current `caron` `0.2.0` source implements and publicly exposes this exact
+ontology identity. Executable versions `4` and `0.5` are historical
+predecessors preserved in documents and Git history, not schemas exposed by
+the maintained runtime.

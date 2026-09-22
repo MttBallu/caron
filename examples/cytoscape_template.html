@@ -211,6 +211,14 @@
       text-transform: capitalize;
     }
 
+    .query-witness {
+      margin-top: 0.35rem;
+      color: #475569;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.68rem;
+      overflow-wrap: anywhere;
+    }
+
     .property,
     details.property {
       margin: 0;
@@ -574,6 +582,25 @@
       return result.type;
     }
 
+    function witnessDescription(witness) {
+      if (!witness) return "";
+      const parts = [];
+      if (witness.entities.length) {
+        parts.push(`entities: ${witness.entities.join(", ")}`);
+      }
+      if (witness.relations.length) {
+        parts.push(`relations: ${witness.relations.join(", ")}`);
+      }
+      if (witness.properties.length) {
+        parts.push(
+          `properties: ${witness.properties
+            .map(item => `${item.entity_id}.${item.name}`)
+            .join(", ")}`
+        );
+      }
+      return parts.join(" · ");
+    }
+
     function appendQueryResults(results) {
       if (!results.length) return;
       const section = element("section", "inspector-section");
@@ -583,6 +610,10 @@
         const card = element("div", "query-result");
         card.appendChild(element("strong", "", result.type.replaceAll("_", " ")));
         card.appendChild(document.createTextNode(queryResultDescription(result)));
+        const witness = witnessDescription(result.witness);
+        if (witness) {
+          card.appendChild(element("div", "query-witness", `Witness · ${witness}`));
+        }
         list.appendChild(card);
       });
       section.appendChild(list);

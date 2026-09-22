@@ -8,9 +8,9 @@ from tempfile import TemporaryDirectory
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _run(label: str, command: list[str]) -> None:
+def _run(label: str, command: list[str], *, cwd: Path = ROOT) -> None:
     print(f"\n==> {label}", flush=True)
-    subprocess.run(command, cwd=ROOT, check=True)
+    subprocess.run(command, cwd=cwd, check=True)
 
 
 def main() -> None:
@@ -39,10 +39,7 @@ def main() -> None:
                 command.extend(("--example", example_name))
             _run(f"{example_name} viewer", command)
 
-        for ontology_version, output_name in (
-            ("4", "ontology_4_graph.html"),
-            ("0.5", "ontology_0_5_graph.html"),
-        ):
+        for ontology_version, output_name in (("5.0", "ontology_5_0_graph.html"),):
             _run(
                 f"ontology {ontology_version} schema viewer",
                 [
@@ -57,6 +54,49 @@ def main() -> None:
             )
 
         _run("distribution build", ["uv", "build", "--out-dir", str(temporary)])
+
+        environment = temporary / "installed-wheel"
+        _run(
+            "clean installation environment",
+            [sys.executable, "-m", "venv", str(environment)],
+            cwd=temporary,
+        )
+        installed_python = environment / (
+            "Scripts/python.exe" if sys.platform == "win32" else "bin/python"
+        )
+        wheel = next(temporary.glob("caron-*.whl"))
+        _run(
+            "wheel installation",
+            [
+                str(installed_python),
+                "-m",
+                "pip",
+                "install",
+                "--no-index",
+                "--no-deps",
+                str(wheel),
+            ],
+            cwd=temporary,
+        )
+        smoke_test = "\n".join(
+            (
+                "from importlib.metadata import version",
+                "from caron import career_ontology_v5_0, validate_ontology",
+                "schema = career_ontology_v5_0()",
+                'assert version("caron") == "0.2.0"',
+                'assert (schema.id, schema.version) == ("caron.career-model", "5.0")',
+                "assert len(schema.concepts) == 13",
+                "assert len(schema.relations) == 31",
+                "assert len(schema.requirements) == 6",
+                "assert len(schema.invariants) == 8",
+                "assert validate_ontology(schema) == ()",
+            )
+        )
+        _run(
+            "installed public API smoke test",
+            [str(installed_python), "-I", "-c", smoke_test],
+            cwd=temporary,
+        )
 
     print("\nAll verification checks passed.", flush=True)
 

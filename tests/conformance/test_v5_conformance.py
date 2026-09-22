@@ -1,4 +1,4 @@
-"""Representative valid, invalid, and non-inference scenarios for 5.0-dev."""
+"""Representative valid, invalid, and non-inference scenarios for 5.0."""
 
 from dataclasses import replace
 
@@ -26,7 +26,7 @@ from caron import (
     YearMonth,
     validate_candidate,
 )
-from caron.ontology import _career_ontology_v5_0_development
+from caron.ontology import career_ontology_v5_0
 from tests.fixtures.v5 import (
     activity_candidate,
     assertion,
@@ -93,7 +93,7 @@ EXPECTED_RELATION_KINDS = frozenset(
 
 
 def _validate(candidate: RealisationCandidate) -> Accepted | Rejected:
-    return validate_candidate(_career_ontology_v5_0_development(), candidate)
+    return validate_candidate(career_ontology_v5_0(), candidate)
 
 
 def _accept(candidate: RealisationCandidate) -> Accepted:

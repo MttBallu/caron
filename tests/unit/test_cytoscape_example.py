@@ -13,11 +13,11 @@ from caron import (
     YearMonth,
     before,
     covered_months,
-    model_v0_5_ontology,
     select_activities_in_window,
     select_whole_realisation,
     validate_candidate,
 )
+from caron.ontology import career_ontology_v5_0
 from examples.cytoscape_html import (
     _cytoscape_value,
     graph_view_to_cytoscape,
@@ -32,7 +32,7 @@ def _whole_example_view() -> GraphView[object]:
 
 
 def _temporal_view() -> GraphView[TemporalMatch]:
-    validation = validate_candidate(model_v0_5_ontology(), temporal_candidate())
+    validation = validate_candidate(career_ontology_v5_0(), temporal_candidate())
     assert isinstance(validation, Accepted)
     return select_activities_in_window(
         validation.realisation,
@@ -83,6 +83,53 @@ def test_renderer_injects_data_and_removes_template_token(tmp_path: Path) -> Non
     assert "__CARON_GRAPH_DATA__" not in html
     assert "proposition:rb90-discrepancy" in html
     assert "cytoscape({" in html
+
+
+def test_representative_v5_graph_renders_new_concepts_and_typed_award() -> None:
+    graph = graph_view_to_cytoscape(_whole_example_view())
+    metadata = graph["metadata"]
+    nodes = graph["nodes"]
+    assert isinstance(metadata, dict)
+    assert isinstance(nodes, list)
+
+    assert metadata["ontology_version"] == "5.0"
+    new_kinds = {
+        node["data"]["kind"]
+        for node in nodes
+        if node["data"]["kind"] in {"Collective", "Language", "Credential"}
+    }
+    assert new_kinds == {"Collective", "Language", "Credential"}
+
+    credential = next(
+        node for node in nodes if node["data"]["id"] == "credential:doctorate"
+    )
+    assert credential["data"]["properties"] == [
+        {
+            "name": "awarded_in",
+            "value": {"type": "year_month", "value": "2025-10"},
+        }
+    ]
+
+
+def test_reference_valued_organization_qualifier_remains_navigable() -> None:
+    graph = graph_view_to_cytoscape(_whole_example_view())
+    edges = graph["edges"]
+    assert isinstance(edges, list)
+    participation = next(
+        edge for edge in edges if edge["data"]["id"] == "relation:participation"
+    )
+
+    organization = next(
+        item
+        for item in participation["data"]["qualifiers"]
+        if item["name"] == "organization"
+    )
+    assert organization["value"] == {
+        "type": "entity_reference",
+        "entity_id": "organization:cea",
+        "label": "CEA",
+        "kind": "Organization",
+    }
 
 
 def test_contextual_relation_is_visibly_anchored_to_its_context() -> None:
@@ -162,6 +209,8 @@ def test_renderer_exposes_temporal_result_in_inspector_payload(tmp_path: Path) -
     assert '"type":"temporal_extent"' in html
     assert '"classification":"possible"' in html
     assert "appendQueryResults(data.query_results || [])" in html
+    assert "witnessDescription(result.witness)" in html
+    assert "Witness ·" in html
 
 
 def test_adapter_serializes_open_temporal_end_states() -> None:
@@ -187,7 +236,7 @@ def test_adapter_serializes_year_month_property_value() -> None:
 
 
 def test_adapter_serializes_other_temporal_result_kinds() -> None:
-    validation = validate_candidate(model_v0_5_ontology(), temporal_candidate())
+    validation = validate_candidate(career_ontology_v5_0(), temporal_candidate())
     assert isinstance(validation, Accepted)
     realisation = validation.realisation
     predicate = before(realisation, "context:alice-project", "context:phd")

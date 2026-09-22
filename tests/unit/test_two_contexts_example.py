@@ -1,12 +1,14 @@
 """Behavioral checks for the Python cross-context example."""
 
-from caron import Accepted, EntityRef, model4_ontology, validate_candidate
+from caron import Accepted, EntityRef, validate_candidate
+from caron.ontology import career_ontology_v5_0
 from examples.two_contexts import build_candidate
 
 
 def test_cross_context_candidate_is_valid() -> None:
     assert isinstance(
-        validate_candidate(model4_ontology(), build_candidate()), Accepted
+        validate_candidate(career_ontology_v5_0(), build_candidate()),
+        Accepted,
     )
 
 
@@ -29,7 +31,8 @@ def test_python_connects_alice_analysis_and_synthetic_data_work() -> None:
     python_uses = {
         relation.source.entity_id
         for relation in candidate.relations
-        if relation.kind == "uses" and relation.target == EntityRef("technology:python")
+        if relation.kind == "uses_technology"
+        and relation.target == EntityRef("technology:python")
     }
 
     assert python_uses == {
@@ -44,7 +47,12 @@ def test_each_activity_has_input_output_and_domain_evidence() -> None:
     activity_ids = {
         entity.id for entity in candidate.entities if entity.kind == "Activity"
     }
-    required_relation_kinds = {"uses", "draws_on", "takes_input", "produces"}
+    required_relation_kinds = {
+        "uses_technology",
+        "draws_on",
+        "takes_input",
+        "produces",
+    }
 
     for activity_id in activity_ids:
         actual_relation_kinds = {
