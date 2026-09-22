@@ -6,7 +6,7 @@ ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_2_exact_schema
+current_phase: phase_3_local_validation
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -101,57 +101,93 @@ rule without introducing a general constraint language.
 
 ### 6.1 Concepts and properties
 
-- [ ] Add `Collective`, `Language`, and `Credential` concept constants.
-- [ ] Define all 13 exact concept kinds.
-- [ ] Require `label: Text` on every concept.
-- [ ] Define optional `Context.temporal_extent: TemporalExtent`.
-- [ ] Define required `Proposition.content: Text`.
-- [ ] Define required `Proposition.context: EntityReference[Context]`.
-- [ ] Define optional `Credential.awarded_in: YearMonth`.
-- [ ] Exclude generic Context status and standalone start/end properties.
+- [x] Add `Collective`, `Language`, and `Credential` concept constants.
+- [x] Define all 13 exact concept kinds.
+- [x] Require `label: Text` on every concept.
+- [x] Define optional `Context.temporal_extent: TemporalExtent`.
+- [x] Define required `Proposition.content: Text`.
+- [x] Define required `Proposition.context: EntityReference[Context]`.
+- [x] Define optional `Credential.awarded_in: YearMonth`.
+- [x] Exclude generic Context status and standalone start/end properties.
 
 ### 6.2 Endpoint families
 
-- [ ] Define internal `Agent` endpoint kinds.
-- [ ] Define internal `Learnable` endpoint kinds.
-- [ ] Define internal `IntellectualResource` endpoint kinds.
-- [ ] Ensure family names cannot be used as entity kinds.
+- [x] Define internal `Agent` endpoint kinds.
+- [x] Define internal `Learnable` endpoint kinds.
+- [x] Define internal `IntellectualResource` endpoint kinds.
+- [x] Ensure family names cannot be used as entity kinds.
 
 ### 6.3 Relations and qualifiers
 
-- [ ] Define all 31 exact relation kinds.
-- [ ] Define every source- and target-kind set.
-- [ ] Define every required and optional qualifier.
-- [ ] Require the `participates_in.role` qualifier.
-- [ ] Add optional `participates_in.organization`.
-- [ ] Require `collective_membership.context` and `.role`.
-- [ ] Require `organization_association.role`.
-- [ ] Split compact `uses` into `uses_technology` and `uses_artifact`.
-- [ ] Add `uses_language` and `native_language`.
-- [ ] Add `modifies`.
-- [ ] Add all four credential relations.
-- [ ] Add `addresses` and `bears_on`.
+- [x] Define all 31 exact relation kinds.
+- [x] Define every source- and target-kind set.
+- [x] Define every required and optional qualifier.
+- [x] Require the `participates_in.role` qualifier.
+- [x] Add optional `participates_in.organization`.
+- [x] Require `collective_membership.context` and `.role`.
+- [x] Require `organization_association.role`.
+- [x] Split compact `uses` into `uses_technology` and `uses_artifact`.
+- [x] Add `uses_language` and `native_language`.
+- [x] Add `modifies`.
+- [x] Add all four credential relations.
+- [x] Add `addresses` and `bears_on`.
 
 ### 6.4 Cardinalities
 
-- [ ] Require one or more performers for each Activity.
-- [ ] Require exactly one `occurs_in` for each Activity.
-- [ ] Require exactly one `awarded_to` for each Credential.
-- [ ] Require one or more `awarded_by` for each Credential.
-- [ ] Require one or more `obtained_through` for each Credential.
-- [ ] Declare zero or more `evidenced_by` for each Credential.
+- [x] Require one or more performers for each Activity.
+- [x] Require exactly one `occurs_in` for each Activity.
+- [x] Require exactly one `awarded_to` for each Credential.
+- [x] Require one or more `awarded_by` for each Credential.
+- [x] Require one or more `obtained_through` for each Credential.
+- [x] Declare zero or more `evidenced_by` for each Credential.
 
 ### 6.5 Exactness tests
 
-- [ ] Assert exact ontology identity and version.
-- [ ] Assert the exact 13-concept inventory and property signatures.
-- [ ] Assert the exact 31-relation inventory, endpoints, and qualifiers.
-- [ ] Assert all six cardinality declarations.
-- [ ] Assert all global-invariant declarations.
-- [ ] Assert that the complete schema passes ontology self-validation.
+- [x] Assert exact development identity `caron.career-model` / `5.0-dev`.
+- [x] Assert the exact 13-concept inventory and property signatures.
+- [x] Assert the exact 31-relation inventory, endpoints, and qualifiers.
+- [x] Assert all six cardinality declarations.
+- [x] Assert all global-invariant declarations.
+- [x] Assert that schema self-validation reports only the eight pending
+      invariant handlers, with no structural diagnostics.
+- [x] Assert that missing handlers prevent candidate acceptance.
+- [x] Keep the development factory private and omit the accepted `5.0` factory
+      from the public API.
 
-Acceptance gate: the immutable executable schema exactly represents sections
-5–10 of the accepted specification.
+Catalogue gate passed: concept/property and relation/qualifier signatures,
+endpoint families, cardinality declarations, and invariant declarations match
+sections 5–11 of the accepted specification. Their complete enforcement is not
+claimed by Phase 2.
+
+### 6.6 Development boundary and verification record
+
+The private `caron.ontology._career_ontology_v5_0_development()` factory returns
+`caron.career-model` / `5.0-dev`. The eight invariant identifiers are declared
+but have no registered handlers yet; `validate_ontology()` reports
+`ontology.unimplemented_invariant` for each, and `validate_candidate()`
+refuses acceptance. No no-op handlers are registered and no declarations are
+removed to bypass this boundary.
+
+This corrects a sequencing dependency in the original checklist: a fully
+successful schema self-validation belongs after the Phase 3–4 implementations.
+That task is retained in Phase 4 below. Promotion to the accepted identifier
+`5.0` and public `career_ontology_v5_0()` factory additionally requires the
+section 16.1 conformance gate; the specification explicitly prohibits an
+incomplete implementation claiming `5.0`.
+
+`tests/unit/test_ontology_v5.py` independently enumerates all 13 concept
+signatures, 31 relation signatures, 41 expanded endpoint pairs, six
+cardinalities, and eight invariant declarations. It adds 70 tests including
+checks that families, legacy relations, and derived constructs do not become
+schema vocabulary. The declaration tests remain useful after promotion;
+readiness tests must evolve as real handlers land in Phases 3–4.
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 151
+tests (81 retained plus 70 catalogue tests), formatting, Ruff, strict mypy,
+existing semantic/temporal examples and viewers, and source/wheel builds.
+
+No runtime conformance, example port, viewer CLI update, legacy removal,
+migration support, or package-version bump is claimed by this phase.
 
 ## 7. Phase 3 — Local record validation
 
@@ -212,6 +248,13 @@ graph-wide validation begins.
 - [ ] Keep ongoing observations fixed rather than clock-dependent.
 - [ ] Accept incomplete but consistent temporal information.
 - [ ] Reject impossible temporal interpretations.
+
+### 8.6 Complete schema readiness
+
+- [ ] Replace the Phase 2 missing-handler expectations as real invariant
+      implementations are registered; never substitute no-op handlers.
+- [ ] Assert that the complete development schema passes ontology
+      self-validation with all eight declarations retained.
 
 Acceptance gate: sections 11 and 16.1 of the accepted specification are
 executable.
@@ -352,6 +395,10 @@ accidental legacy support surface.
 - [ ] Install the wheel in a clean temporary environment.
 - [ ] Smoke-test the installed public API.
 - [ ] Review the final implementation against every section 16.1 obligation.
+- [ ] Promote the private development factory to public
+      `career_ontology_v5_0()` with exact version `5.0` only after the full
+      conformance gate passes; update tests, fixtures, examples, and viewers
+      to the accepted identity and rerun the full gate.
 - [ ] Commit the acceptance transition.
 - [ ] Push the implementation branch for review.
 - [ ] Merge only after the complete verification gate passes.

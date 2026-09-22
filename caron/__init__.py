@@ -5,7 +5,10 @@ from caron.entities import Entity, EntityRef, Property
 from caron.ontology import (
     ACTIVITY,
     ARTIFACT,
+    COLLECTIVE,
     CONTEXT,
+    CREDENTIAL,
+    LANGUAGE,
     METHOD,
     ORGANIZATION,
     PERSON,
@@ -66,7 +69,10 @@ from caron.views import GraphView, QueryBinding, QueryWitness
 __all__ = [
     "ACTIVITY",
     "ARTIFACT",
+    "COLLECTIVE",
     "CONTEXT",
+    "CREDENTIAL",
+    "LANGUAGE",
     "METHOD",
     "ORGANIZATION",
     "PERSON",

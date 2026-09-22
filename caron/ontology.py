@@ -97,16 +97,20 @@ class OntologySchema:
 
 
 PERSON = "Person"
+COLLECTIVE = "Collective"
 CONTEXT = "Context"
 ACTIVITY = "Activity"
 TECHNOLOGY = "Technology"
 METHOD = "Method"
 SUBJECT = "Subject"
+LANGUAGE = "Language"
 ARTIFACT = "Artifact"
 PROPOSITION = "Proposition"
 ORGANIZATION = "Organization"
 PLACE = "Place"
+CREDENTIAL = "Credential"
 
+# Legacy compact inventory; inspect schema.concepts for a version's vocabulary.
 ALL_CONCEPTS = frozenset(
     {
         PERSON,
@@ -264,4 +268,189 @@ def model_v0_5_ontology() -> OntologySchema:
         concepts=concepts,
         relations=predecessor.relations,
         requirements=predecessor.requirements,
+    )
+
+
+def _career_ontology_v5_0_development() -> OntologySchema:
+    """Return the complete 5.0 catalogue under a development-only identity.
+
+    The accepted specification sections 7–11 are the source of these
+    declarations. Families are endpoint unions, never additional concepts.
+    Missing invariant handlers deliberately prevent candidate acceptance.
+    Exposing ``career_ontology_v5_0()`` with version ``5.0`` must wait for the
+    full conformance gate in specification section 16.1.
+    """
+
+    agent_kinds = frozenset({PERSON, COLLECTIVE})
+    learnable_kinds = frozenset({TECHNOLOGY, METHOD, SUBJECT, LANGUAGE})
+    intellectual_resource_kinds = frozenset({METHOD, SUBJECT})
+    role = QualifierDefinition("role", ValueKind.TEXT, required=True)
+
+    concepts = (
+        _labelled(PERSON),
+        _labelled(COLLECTIVE),
+        _labelled(
+            CONTEXT,
+            PropertyDefinition("temporal_extent", ValueKind.TEMPORAL_EXTENT),
+        ),
+        _labelled(ACTIVITY),
+        _labelled(TECHNOLOGY),
+        _labelled(METHOD),
+        _labelled(SUBJECT),
+        _labelled(LANGUAGE),
+        _labelled(ARTIFACT),
+        _labelled(
+            PROPOSITION,
+            PropertyDefinition("content", ValueKind.TEXT, required=True),
+            PropertyDefinition(
+                "context",
+                ValueKind.ENTITY_REFERENCE,
+                required=True,
+                allowed_reference_kinds=frozenset({CONTEXT}),
+            ),
+        ),
+        _labelled(ORGANIZATION),
+        _labelled(PLACE),
+        _labelled(
+            CREDENTIAL,
+            PropertyDefinition("awarded_in", ValueKind.YEAR_MONTH),
+        ),
+    )
+
+    relations = (
+        # Section 9.1: structure, agency, and social context.
+        RelationDefinition("part_of", frozenset({CONTEXT}), frozenset({CONTEXT})),
+        RelationDefinition(
+            "suborganization_of",
+            frozenset({ORGANIZATION}),
+            frozenset({ORGANIZATION}),
+        ),
+        RelationDefinition("performs", agent_kinds, frozenset({ACTIVITY})),
+        RelationDefinition("occurs_in", frozenset({ACTIVITY}), frozenset({CONTEXT})),
+        RelationDefinition(
+            "participates_in",
+            agent_kinds,
+            frozenset({CONTEXT}),
+            qualifiers=(
+                role,
+                QualifierDefinition(
+                    "organization",
+                    ValueKind.ENTITY_REFERENCE,
+                    allowed_reference_kinds=frozenset({ORGANIZATION}),
+                ),
+            ),
+        ),
+        RelationDefinition(
+            "collective_membership",
+            frozenset({PERSON}),
+            frozenset({COLLECTIVE}),
+            qualifiers=(_context_qualifier(), role),
+        ),
+        RelationDefinition(
+            "organization_association",
+            frozenset({ORGANIZATION}),
+            frozenset({CONTEXT}),
+            qualifiers=(role,),
+        ),
+        RelationDefinition("occurs_at", frozenset({CONTEXT}), frozenset({PLACE})),
+        # Section 9.2: exposure, learning, and reusable resources.
+        RelationDefinition(
+            "exposed_to",
+            frozenset({PERSON}),
+            learnable_kinds,
+            qualifiers=(_context_qualifier(),),
+        ),
+        RelationDefinition(
+            "learns",
+            frozenset({PERSON}),
+            learnable_kinds,
+            qualifiers=(_context_qualifier(),),
+        ),
+        RelationDefinition(
+            "uses_technology", frozenset({ACTIVITY}), frozenset({TECHNOLOGY})
+        ),
+        RelationDefinition(
+            "uses_artifact", frozenset({ACTIVITY}), frozenset({ARTIFACT})
+        ),
+        RelationDefinition(
+            "uses_language", frozenset({ACTIVITY}), frozenset({LANGUAGE})
+        ),
+        RelationDefinition("applies", frozenset({ACTIVITY}), frozenset({METHOD})),
+        RelationDefinition(
+            "draws_on", frozenset({ACTIVITY}), intellectual_resource_kinds
+        ),
+        RelationDefinition(
+            "native_language", frozenset({PERSON}), frozenset({LANGUAGE})
+        ),
+        # Section 9.3: independent artifact roles.
+        RelationDefinition("takes_input", frozenset({ACTIVITY}), frozenset({ARTIFACT})),
+        RelationDefinition("produces", frozenset({ACTIVITY}), frozenset({ARTIFACT})),
+        RelationDefinition("modifies", frozenset({ACTIVITY}), frozenset({ARTIFACT})),
+        # Section 9.4: particular credential awards, not reusable award types.
+        RelationDefinition("awarded_to", frozenset({CREDENTIAL}), frozenset({PERSON})),
+        RelationDefinition(
+            "awarded_by", frozenset({CREDENTIAL}), frozenset({ORGANIZATION})
+        ),
+        RelationDefinition(
+            "obtained_through", frozenset({CREDENTIAL}), frozenset({CONTEXT})
+        ),
+        RelationDefinition(
+            "evidenced_by", frozenset({CREDENTIAL}), frozenset({ARTIFACT})
+        ),
+        # Section 9.5: intentional, outcome, and explanatory structure.
+        RelationDefinition("aims_at", frozenset({CONTEXT}), frozenset({PROPOSITION})),
+        RelationDefinition(
+            "addresses", frozenset({ACTIVITY}), frozenset({PROPOSITION})
+        ),
+        RelationDefinition(
+            "motivates", frozenset({PROPOSITION}), frozenset({ACTIVITY, CONTEXT})
+        ),
+        RelationDefinition(
+            "results_in", frozenset({ACTIVITY}), frozenset({PROPOSITION})
+        ),
+        RelationDefinition(
+            "establishes", frozenset({ACTIVITY}), frozenset({PROPOSITION})
+        ),
+        RelationDefinition("supports", frozenset({ACTIVITY}), frozenset({PROPOSITION})),
+        RelationDefinition(
+            "contradicts", frozenset({ACTIVITY}), frozenset({PROPOSITION})
+        ),
+        RelationDefinition(
+            "bears_on", frozenset({PROPOSITION}), frozenset({PROPOSITION})
+        ),
+    )
+
+    requirements = (
+        RelationRequirement(ACTIVITY, "performs", EndpointPosition.TARGET, minimum=1),
+        RelationRequirement(
+            ACTIVITY, "occurs_in", EndpointPosition.SOURCE, minimum=1, maximum=1
+        ),
+        RelationRequirement(
+            CREDENTIAL, "awarded_to", EndpointPosition.SOURCE, minimum=1, maximum=1
+        ),
+        RelationRequirement(
+            CREDENTIAL, "awarded_by", EndpointPosition.SOURCE, minimum=1
+        ),
+        RelationRequirement(
+            CREDENTIAL, "obtained_through", EndpointPosition.SOURCE, minimum=1
+        ),
+        RelationRequirement(CREDENTIAL, "evidenced_by", EndpointPosition.SOURCE),
+    )
+
+    return OntologySchema(
+        id="caron.career-model",
+        version="5.0-dev",
+        concepts=concepts,
+        relations=relations,
+        requirements=requirements,
+        invariants=(
+            InvariantDefinition("record_identifier_lexical"),
+            InvariantDefinition("required_text_non_blank"),
+            InvariantDefinition("semantic_relation_fact_unique"),
+            InvariantDefinition("part_of_acyclic"),
+            InvariantDefinition("suborganization_of_acyclic"),
+            InvariantDefinition("aims_at_locality"),
+            InvariantDefinition("bears_on_roles_and_locality"),
+            InvariantDefinition("temporal_consistency"),
+        ),
     )

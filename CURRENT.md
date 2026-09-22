@@ -14,7 +14,8 @@ The M0 baseline is the Git revision containing this record on `main`.
 | Ontology identity | `caron.career-model` | Stable ontology-family identifier |
 | Compatibility schema | version `4` | Earlier executable schema retained for regressions and migration work |
 | Current temporal schema | version `0.5` | Model 4 vocabulary with the accepted month-level temporal contract |
-| Integrated ontology target | version `5.0` | Accepted normative schema completed by M1-C; not yet implemented |
+| Integrated ontology target | version `5.0` | Accepted normative schema completed by M1-C; conformance implementation in progress |
+| Development catalogue | version `5.0-dev` | Complete declarations; private factory, pending invariant handlers, no candidate acceptance |
 
 `4`, Model 4.2, `0.5`, and `5.0` are lineage labels, not numbers to compare
 across conceptual and executable histories. Model 4.2 is the conceptual
@@ -54,9 +55,18 @@ question to executable versions `4` and `0.5`. The
 the semantic gaps and assigns the new integrated ontology version `5.0` while
 keeping the `caron` package version independent. The
 [accepted M1-C specification](docs/career-ontology-v5.0-specification.md)
-consolidates those decisions into one exact normative schema. Implementing
-ontology `5.0`, without changing the current meaning of versions `4` and
-`0.5`, is the next gate.
+consolidates those decisions into one exact normative schema. Implementation
+is tracked in the [maintained task list](docs/career-ontology-v5.0-implementation-plan.md).
+Phases 1 and 2 have added the meta-model extensions and complete development
+catalogue: 13 concepts, 31 relation signatures, six cardinalities, and eight
+invariant declarations. Phase 3 (local validation) is next.
+
+The private `_career_ontology_v5_0_development()` factory returns version
+`5.0-dev`, not the accepted `5.0` identifier. All eight invariant handlers
+remain pending; ontology self-validation reports them explicitly and candidate
+validation refuses acceptance. The public `career_ontology_v5_0()` factory
+and exact `5.0` identity remain gated on full specification conformance.
+Package version `0.1.0` and existing examples/viewer commands are unchanged.
 
 ## Pre-1.0 implementation-transition policy
 
@@ -84,7 +94,9 @@ sufficiently stable pre-`1.0` boundary.
 The one authoritative source tree is this repository:
 
 - `caron/ontology.py` defines immutable schema records and versions `4` and
-  `0.5`;
+  `0.5`, plus the private `5.0-dev` catalogue;
+- `caron/_invariants.py` owns the internal registry of invariant handlers;
+  schema declarations contain identifiers, not callbacks;
 - `caron/entities.py`, `relations.py`, and `realisations.py` own semantic
   records, stable assertion identities, coverage, and validated reads;
 - `caron/validation.py` is the only candidate-to-validated boundary;
