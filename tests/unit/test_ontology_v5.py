@@ -14,7 +14,6 @@ from caron import (
     COLLECTIVE,
     CREDENTIAL,
     LANGUAGE,
-    DiagnosticLayer,
     OntologySchema,
     PropertyDefinition,
     QualifierDefinition,
@@ -260,27 +259,28 @@ def test_interpretive_concepts_are_absent(schema: OntologySchema, kind: str) -> 
     assert schema.concept(kind) is None
 
 
-def test_schema_self_validation_reports_only_pending_handlers(
+def test_complete_development_schema_passes_self_validation(
     schema: OntologySchema,
 ) -> None:
-    # Phase 3 implements the two local-record handlers. Keep the remaining
-    # readiness guard until real Phase 4 implementations land; never use stubs.
-    diagnostics = validate_ontology(schema)
-    assert [(item.code, item.layer, item.record_id) for item in diagnostics] == [
-        ("ontology.unimplemented_invariant", DiagnosticLayer.ONTOLOGY, invariant_id)
-        for invariant_id in sorted(
-            EXPECTED_INVARIANTS
-            - {"record_identifier_lexical", "required_text_non_blank"}
-        )
-    ]
+    assert validate_ontology(schema) == ()
 
 
-@pytest.mark.parametrize("version", ("4", "0.5", "5.0", "5.0-dev"))
-def test_unimplemented_invariants_prevent_any_candidate_acceptance(
+@pytest.mark.parametrize("version", ("4", "0.5", "5.0"))
+def test_exact_version_mismatch_prevents_candidate_acceptance(
     schema: OntologySchema, version: str
 ) -> None:
     candidate = replace(minimal_candidate(), ontology_version=version)
     result = validate_candidate(schema, candidate)
 
     assert isinstance(result, Rejected)
-    assert result.diagnostics == validate_ontology(schema)
+    assert [item.code for item in result.diagnostics] == [
+        "realisation.ontology_version_mismatch"
+    ]
+
+
+def test_conforming_development_candidate_can_be_accepted(
+    schema: OntologySchema,
+) -> None:
+    candidate = replace(minimal_candidate(), ontology_version="5.0-dev")
+
+    assert isinstance(validate_candidate(schema, candidate), caron.Accepted)

@@ -6,7 +6,7 @@ ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_4_realisation_invariants
+current_phase: phase_5_conformance_suite
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -233,11 +233,12 @@ graph diagnostics from malformed records; those checks wait until local errors
 are resolved. The private `_validate_local_records()` helper returns diagnostics
 only and cannot construct a validated realisation.
 
-The development catalogue retains all eight declarations. Six handlers remain
-pending, so public candidate validation still refuses acceptance. Tests exercise
-the private local stage against the full `5.0-dev` catalogue without removing
-declarations or pretending it conforms to `5.0`. Separate test-only ontologies
-verify the staged acceptance machinery.
+At the Phase 3 checkpoint, the development catalogue retains all eight
+declarations while six handlers remain pending, so public candidate validation
+still refuses acceptance. Tests exercise the private local stage against the
+full `5.0-dev` catalogue without removing declarations or pretending it
+conforms to `5.0`. Separate test-only ontologies verify the staged acceptance
+machinery.
 
 ### 7.2 Verification record
 
@@ -261,55 +262,114 @@ or migration support is claimed. Phase 4 is next.
 
 ### 8.1 Semantic relation identity
 
-- [ ] Build a typed, qualifier-order-independent semantic relation key.
-- [ ] Exclude the relation assertion identifier from semantic equality.
-- [ ] Reject duplicate semantic facts with different identifiers.
-- [ ] Emit `realisation.duplicate_relation_fact`.
-- [ ] Count distinct semantic facts for cardinality validation.
+- [x] Build a typed, qualifier-order-independent semantic relation key.
+- [x] Exclude the relation assertion identifier from semantic equality.
+- [x] Reject duplicate semantic facts with different identifiers.
+- [x] Emit `realisation.duplicate_relation_fact`.
+- [x] Count distinct semantic facts for cardinality validation.
 
 ### 8.2 Structural graphs
 
-- [ ] Reject `part_of` self-loops and longer cycles.
-- [ ] Accept valid multiple-parent Context DAGs.
-- [ ] Reject `suborganization_of` self-loops and longer cycles.
-- [ ] Make cycle diagnostics independent of record order.
+- [x] Reject `part_of` self-loops and longer cycles.
+- [x] Accept valid multiple-parent Context DAGs.
+- [x] Reject `suborganization_of` self-loops and longer cycles.
+- [x] Make cycle diagnostics independent of record order.
 
 ### 8.3 Proposition locality
 
-- [ ] Accept same-Context `aims_at` assertions.
-- [ ] Reject mismatched Proposition locality.
-- [ ] Never rewrite, clone, or relocalize propositions during validation.
+- [x] Accept same-Context `aims_at` assertions.
+- [x] Reject mismatched Proposition locality.
+- [x] Never rewrite, clone, or relocalize propositions during validation.
 
 ### 8.4 `bears_on`
 
-- [ ] Require the source to be an explicit activity outcome.
-- [ ] Require the target to be an explicit aim.
-- [ ] Reject identical source and target propositions.
-- [ ] Accept equal Contexts.
-- [ ] Accept a source Context nested within the target Context.
-- [ ] Reject sibling and reversed-context cases.
-- [ ] Never infer a `bears_on` assertion.
+- [x] Require the source to be an explicit activity outcome.
+- [x] Require the target to be an explicit aim.
+- [x] Reject identical source and target propositions.
+- [x] Accept equal Contexts.
+- [x] Accept a source Context nested within the target Context.
+- [x] Reject sibling and reversed-context cases.
+- [x] Never infer a `bears_on` assertion.
 
 ### 8.5 Temporal consistency
 
-- [ ] Preserve known, unknown, and ongoing end states.
-- [ ] Preserve transitive Context containment.
-- [ ] Preserve multiple-parent temporal-intersection checks.
-- [ ] Constrain Activity time through `occurs_in`.
-- [ ] Never copy a Context extent onto a child or Activity.
-- [ ] Keep ongoing observations fixed rather than clock-dependent.
-- [ ] Accept incomplete but consistent temporal information.
-- [ ] Reject impossible temporal interpretations.
+- [x] Preserve known, unknown, and ongoing end states.
+- [x] Preserve transitive Context containment.
+- [x] Preserve multiple-parent temporal-intersection checks.
+- [x] Constrain Activity time through `occurs_in`.
+- [x] Never copy a Context extent onto a child or Activity.
+- [x] Keep ongoing observations fixed rather than clock-dependent.
+- [x] Accept incomplete but consistent temporal information.
+- [x] Reject impossible temporal interpretations.
 
 ### 8.6 Complete schema readiness
 
-- [ ] Replace the Phase 2 missing-handler expectations as real invariant
+- [x] Replace the Phase 2 missing-handler expectations as real invariant
       implementations are registered; never substitute no-op handlers.
-- [ ] Assert that the complete development schema passes ontology
+- [x] Assert that the complete development schema passes ontology
       self-validation with all eight declarations retained.
 
-Acceptance gate: sections 11 and 16.1 of the accepted specification are
-executable.
+Phase 4 enforcement gate passed: the realisation-wide rules in section 11 and
+the corresponding enforcement requirements in section 16.1 are executable.
+The exact `5.0` public identity remains gated on the representative conformance
+suite, non-inference audit, and promotion work in later phases.
+
+### 8.7 Implementation boundary and diagnostics
+
+`caron/_career_v5_invariants.py` implements the six realisation-stage handlers.
+It also owns the typed semantic relation key used by both duplicate detection
+and cardinality counting. The key consists of relation kind, complete source
+and target identifiers, and a qualifier-name mapping to explicitly tagged
+values. It excludes the assertion identifier and qualifier-entry order.
+
+Cycle validation tests each structural edge against deterministic reachability.
+This rejects self-loops and every edge participating in a longer cycle while
+accepting multiple-parent DAGs. `aims_at` reads the Proposition's required
+`context` property as the sole locality authority. `bears_on` checks explicit
+outcome and aim assertions, distinct propositions, and directed Context
+reachability; none of these handlers creates inferred assertions.
+
+Temporal consistency retains the established existential interval semantics.
+Known parent ends impose upper bounds; unknown and ongoing ends remain open,
+with an ongoing observation fixing only its recorded minimum end. Every Context
+must fit the intersection of all direct and transitive dated ancestors. An
+Activity has no intrinsic extent in ontology `5.0`: its exactly-one `occurs_in`
+fact constrains its nonempty occurrence without copying the Context extent.
+
+Stable Phase 4 diagnostics are:
+
+| Diagnostic code | Condition |
+|---|---|
+| `realisation.duplicate_relation_fact` | Two identified records have the same semantic relation key |
+| `realisation.part_of_cycle` | A `part_of` edge participates in a cycle |
+| `realisation.suborganization_of_cycle` | A `suborganization_of` edge participates in a cycle |
+| `realisation.aims_at_context_mismatch` | Aim Context differs from the target Proposition locality |
+| `realisation.bears_on_source_not_outcome` | Source Proposition lacks an explicit activity-outcome role |
+| `realisation.bears_on_target_not_aim` | Target Proposition lacks an explicit aim role |
+| `realisation.bears_on_self_reference` | Source and target are the same Proposition |
+| `realisation.bears_on_incompatible_context` | Source locality is not equal to or nested within target locality |
+| `realisation.temporal_containment_impossible` | Context containment admits no temporal interpretation |
+
+Existing cardinality diagnostics remain unchanged. Cardinalities now count
+distinct semantic facts, so repeated records produce a duplicate-fact error
+without falsely increasing an exactly-one count.
+
+### 8.8 Verification record
+
+Verification on 2026-09-22: the full `tools/verify.py` gate passes with 389
+tests, formatting, Ruff, strict mypy, semantic/temporal examples, all existing
+viewers, and source/wheel builds.
+
+The 40 Phase 4 tests cover typed and qualifier-order-independent identity,
+duplicate and distinct cardinality counts for Activity and Credential,
+self-loops, longer cycles, multiple-parent DAGs, deterministic diagnostics,
+Proposition locality, every activity-outcome role, equal/nested/sibling/reversed
+`bears_on` locality, explicit-evidence non-inference, cross-Context outcomes,
+known/unknown/ongoing extents, transitive and multiple-parent containment,
+incomplete time, activity constraints, and preservation of asserted values.
+The complete `5.0-dev` schema now passes `validate_ontology()` with all eight
+declarations and real handlers. Conforming development candidates may be
+accepted, but no public exact-`5.0` factory or package-version bump is claimed.
 
 ## 9. Phase 5 — Fixtures and conformance suite
 
