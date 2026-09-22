@@ -1,12 +1,12 @@
 ---
 kind: implementation_plan
-status: accepted_awaiting_push_and_review
+status: completed
 date: 2026-09-22
 ontology_id: caron.career-model
 ontology_target: "5.0"
 package_target: "0.2.0"
 architecture_contract_target: "0.3"
-current_phase: phase_10_accepted_awaiting_push
+current_phase: completed
 ---
 
 # Career Ontology 5.0 — Implementation Plan
@@ -691,8 +691,8 @@ and `caron` `0.2.0` source and wheel builds.
       conformance gate passes; update tests, fixtures, examples, and viewers
       to the accepted identity and rerun the full gate.
 - [x] Commit the acceptance transition.
-- [ ] Push the implementation branch for review.
-- [ ] Merge only after the complete verification gate passes.
+- [x] Push the implementation branch for review.
+- [x] Merge only after the complete verification gate passes.
 
 Acceptance gate: `caron 0.2.0` implements the accepted ontology `5.0` without
 claiming deferred migration, storage, or query-contract capabilities.
@@ -739,6 +739,8 @@ environment, and runs an isolated installed-API smoke test confirming package
 version `0.2.0`, public factory availability, exact schema identity, the
 13/31/6/8 catalogue counts, and ontology self-validation.
 
-The local acceptance gate is complete. Push and merge remain explicit
-repository workflow actions; the branch is ready for review without claiming
-migration, persistence, serialization, or a public query-plan contract.
+The local acceptance gate is complete without claiming migration, persistence,
+serialization, or a public query-plan contract. The implementation branch was
+published as GitHub pull request #1. GitHub confirmed it was mergeable, CI run
+12 passed, and the pull request was merged into `main` on 2026-09-22 as merge
+commit `434c019ef28726d42e836c1e5b284e16c109a778`.
