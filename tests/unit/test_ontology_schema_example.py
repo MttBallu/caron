@@ -1,9 +1,15 @@
 """Regression checks for the executable ontology-schema viewer."""
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from caron import OntologySchema, model4_ontology, model_v0_5_ontology
+from caron import (
+    InvariantDefinition,
+    OntologySchema,
+    model4_ontology,
+    model_v0_5_ontology,
+)
 from examples.ontology_schema_html import (
     ontology_schema_to_cytoscape,
     render_ontology_schema_html,
@@ -129,6 +135,20 @@ def test_version_selection_exposes_the_context_property_difference() -> None:
         "label",
         "temporal_extent",
     ]
+
+
+def test_projection_exposes_declared_global_invariants() -> None:
+    ontology = replace(
+        model_v0_5_ontology(),
+        invariants=(InvariantDefinition("test.temporal_consistency"),),
+    )
+
+    graph = ontology_schema_to_cytoscape(ontology)
+
+    assert graph["invariants"] == [{"id": "test.temporal_consistency"}]
+    metadata = graph["metadata"]
+    assert isinstance(metadata, dict)
+    assert metadata["invariant_count"] == 1
 
 
 def test_renderer_injects_schema_data_and_escapes_script_content(

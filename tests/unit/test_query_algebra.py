@@ -1,4 +1,4 @@
-from caron import EntityRef
+from caron import EntityRef, YearMonth
 from caron._query_algebra import (
     BindingTable,
     EntityConstant,
@@ -14,6 +14,8 @@ from caron._query_algebra import (
     RelationPattern,
     Union,
     Variable,
+    _property_value,
+    _sortable_value,
     binding_table,
     evaluate_plan,
     graph_view_from_relation,
@@ -326,3 +328,11 @@ def test_empty_result_preserves_selective_coverage() -> None:
     assert view.entities == ()
     assert view.relations == ()
     assert view.coverage == realisation.coverage
+
+
+def test_year_month_is_a_scalar_orderable_property_value() -> None:
+    september = YearMonth.parse("2025-09")
+    october = YearMonth.parse("2025-10")
+
+    assert _property_value(october) == october
+    assert _sortable_value(september) < _sortable_value(october)

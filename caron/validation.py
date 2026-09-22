@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from caron._invariants import INVARIANT_VALIDATORS
 from caron.diagnostics import Diagnostic, DiagnosticLayer
 from caron.entities import Entity, EntityRef, PropertyValue
 from caron.ontology import (
@@ -12,7 +13,7 @@ from caron.ontology import (
 )
 from caron.realisations import RealisationCandidate, ValidatedRealisation
 from caron.relations import QualifierValue, RelationAssertion
-from caron.temporal import KnownEnd, OngoingAsOf, TemporalExtent, UnknownEnd
+from caron.temporal import KnownEnd, OngoingAsOf, TemporalExtent, UnknownEnd, YearMonth
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +47,8 @@ def _value_matches_kind(value: PropertyValue | QualifierValue, kind: ValueKind) 
             return isinstance(value, int) and not isinstance(value, bool)
         case ValueKind.ENTITY_REFERENCE:
             return isinstance(value, EntityRef)
+        case ValueKind.YEAR_MONTH:
+            return isinstance(value, YearMonth)
         case ValueKind.TEMPORAL_EXTENT:
             return isinstance(value, TemporalExtent)
 
@@ -58,6 +61,7 @@ def validate_ontology(ontology: OntologySchema) -> tuple[Diagnostic, ...]:
     relation_kinds = tuple(relation.kind for relation in ontology.relations)
     concept_id_set = frozenset(concept_ids)
     relation_kind_set = frozenset(relation_kinds)
+    invariant_ids = tuple(invariant.id for invariant in ontology.invariants)
 
     for concept_id in sorted(_duplicate_values(concept_ids)):
         diagnostics.append(
@@ -76,6 +80,28 @@ def validate_ontology(ontology: OntologySchema) -> tuple[Diagnostic, ...]:
                 layer=DiagnosticLayer.ONTOLOGY,
                 message=f"Relation {relation_kind!r} is defined more than once.",
                 record_id=relation_kind,
+            )
+        )
+
+    for invariant_id in sorted(_duplicate_values(invariant_ids)):
+        diagnostics.append(
+            Diagnostic(
+                code="ontology.duplicate_invariant",
+                layer=DiagnosticLayer.ONTOLOGY,
+                message=f"Invariant {invariant_id!r} is declared more than once.",
+                record_id=invariant_id,
+            )
+        )
+
+    for invariant_id in sorted(set(invariant_ids) - INVARIANT_VALIDATORS.keys()):
+        diagnostics.append(
+            Diagnostic(
+                code="ontology.unimplemented_invariant",
+                layer=DiagnosticLayer.ONTOLOGY,
+                message=(
+                    f"Invariant {invariant_id!r} has no registered implementation."
+                ),
+                record_id=invariant_id,
             )
         )
 
@@ -364,6 +390,10 @@ def validate_candidate(
     diagnostics.extend(
         _validate_temporal_containment(candidate.entities, candidate.relations)
     )
+    for invariant in ontology.invariants:
+        invariant_validator = INVARIANT_VALIDATORS.get(invariant.id)
+        if invariant_validator is not None:
+            diagnostics.extend(invariant_validator(ontology, candidate))
 
     if diagnostics:
         return Rejected(tuple(diagnostics))

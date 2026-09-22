@@ -30,6 +30,7 @@ from caron import (
     TemporalPredicateResult,
     TemporalWindow,
     UnknownEnd,
+    YearMonth,
     model_v0_5_ontology,
     select_activities_in_window,
     select_whole_realisation,
@@ -124,6 +125,8 @@ def _cytoscape_value(
             return {"type": "text", "value": text}
         case int() as integer:
             return {"type": "integer", "value": integer}
+        case YearMonth() as month:
+            return {"type": "year_month", "value": str(month)}
         case TemporalExtent(start=start, end=end):
             match end:
                 case KnownEnd(month):

@@ -10,6 +10,7 @@ from caron import (
     TemporalMatch,
     TemporalMatchMode,
     TemporalWindow,
+    YearMonth,
     before,
     covered_months,
     model_v0_5_ontology,
@@ -175,6 +176,13 @@ def test_adapter_serializes_open_temporal_end_states() -> None:
         "start": "2026-04",
         "end": {"kind": "ongoing_as_of", "as_of": "2026-09"},
         "display": "2026-04 — ongoing (as of 2026-09)",
+    }
+
+
+def test_adapter_serializes_year_month_property_value() -> None:
+    assert _cytoscape_value(YearMonth.parse("2025-10"), {}) == {
+        "type": "year_month",
+        "value": "2025-10",
     }
 
 

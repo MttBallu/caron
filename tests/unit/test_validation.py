@@ -13,12 +13,16 @@ from caron import (
     CoverageStatus,
     Entity,
     EntityRef,
+    OntologySchema,
     Property,
+    PropertyDefinition,
     Qualifier,
     RealisationCandidate,
     Rejected,
     RelationAssertion,
     ValidatedRealisation,
+    ValueKind,
+    YearMonth,
     model4_ontology,
     validate_candidate,
 )
@@ -181,6 +185,58 @@ def test_integer_property_rejects_boolean_runtime_value() -> None:
     )
 
     result = validate_candidate(ontology, candidate)
+
+    assert isinstance(result, Rejected)
+    assert "record.invalid_value_kind" in diagnostic_codes(result)
+
+
+def _ontology_with_year_month_person_property() -> OntologySchema:
+    ontology = model4_ontology()
+    person = ontology.concept(PERSON)
+    assert person is not None
+    extended_person = replace(
+        person,
+        properties=person.properties
+        + (PropertyDefinition("award_month", ValueKind.YEAR_MONTH),),
+    )
+    return replace(
+        ontology,
+        concepts=tuple(
+            extended_person if concept.id == PERSON else concept
+            for concept in ontology.concepts
+        ),
+    )
+
+
+def test_year_month_property_accepts_year_month_value() -> None:
+    candidate = minimal_candidate()
+    person = candidate.entities[0]
+    dated_person = replace(
+        person,
+        properties=person.properties
+        + (Property("award_month", YearMonth.parse("2025-10")),),
+    )
+
+    result = validate_candidate(
+        _ontology_with_year_month_person_property(),
+        replace(candidate, entities=(dated_person, *candidate.entities[1:])),
+    )
+
+    assert isinstance(result, Accepted)
+
+
+def test_year_month_property_rejects_raw_string() -> None:
+    candidate = minimal_candidate()
+    person = candidate.entities[0]
+    dated_person = replace(
+        person,
+        properties=person.properties + (Property("award_month", "2025-10"),),
+    )
+
+    result = validate_candidate(
+        _ontology_with_year_month_person_property(),
+        replace(candidate, entities=(dated_person, *candidate.entities[1:])),
+    )
 
     assert isinstance(result, Rejected)
     assert "record.invalid_value_kind" in diagnostic_codes(result)

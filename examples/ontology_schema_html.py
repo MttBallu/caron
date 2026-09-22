@@ -156,6 +156,7 @@ def ontology_schema_to_cytoscape(
             "relation_rule_count": len(ontology.relations),
             "expanded_edge_count": len(edges),
             "requirement_count": len(ontology.requirements),
+            "invariant_count": len(ontology.invariants),
             "projection": "executable_ontology_schema",
         },
         "nodes": nodes,
@@ -163,6 +164,7 @@ def ontology_schema_to_cytoscape(
         "requirements": [
             _requirement_data(requirement) for requirement in ontology.requirements
         ],
+        "invariants": [{"id": invariant.id} for invariant in ontology.invariants],
     }
 
 

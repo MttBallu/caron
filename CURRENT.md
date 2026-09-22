@@ -33,6 +33,7 @@ support several exact ontology versions and migrations.
 | `docs/career-ontology-package-boundaries.md` | Normative architecture note | Package ownership and public/private boundaries |
 | `docs/career-ontology-m1b-semantic-decisions.md` | Accepted M1-B decisions | Normative inputs to the integrated ontology `5.0` specification |
 | `docs/career-ontology-v5.0-specification.md` | Accepted M1-C specification | Normative vocabulary, invariants, lineage, migration, and conformance contract for ontology `5.0` |
+| `docs/career-ontology-v5.0-implementation-plan.md` | Active implementation plan | Maintained task list, progress, and acceptance gates for `caron` `0.2.0` |
 | `career-ontology-package-skeleton.md` | Current implementation overview | Implemented surface, tree, and deliberately deferred work |
 | Temporal review and instantiation documents | Supporting evidence | Design review and worked experiment; not separate runtime authorities |
 | `examples/` | Executable demonstrations | Semantic, temporal, and renderer behavior from the maintained package |
@@ -56,6 +57,27 @@ keeping the `caron` package version independent. The
 consolidates those decisions into one exact normative schema. Implementing
 ontology `5.0`, without changing the current meaning of versions `4` and
 `0.5`, is the next gate.
+
+## Pre-1.0 implementation-transition policy
+
+The `caron` package remains experimental before `1.0`. During this period,
+implementation work optimizes for learning, semantic clarity, and a coherent
+current public surface rather than backward compatibility with every earlier
+prototype. Ontology versions remain exact historical artifacts, but a new
+`caron` `0.x` release is not required to keep every earlier ontology executable
+or to accept its realisations.
+
+The ontology `5.0` implementation will temporarily coexist with executable
+versions `4` and `0.5` while useful behavior and tests are ported. That
+coexistence is a transition technique, not a support commitment. The target
+`caron` `0.2.0` release will maintain ontology `5.0` only; earlier executable
+schemas remain recoverable from documents and Git history.
+
+Migration is a separate package capability under section 16.2 of the accepted
+`5.0` specification. It is not part of this implementation increment and will
+not be advertised by `caron` `0.2.0`. Compatibility, deprecation, and migration
+guarantees will be defined only when the package and ontology have reached a
+sufficiently stable pre-`1.0` boundary.
 
 ## Maintained implementation
 
@@ -111,8 +133,9 @@ gate generates it in a temporary directory from the same checked-out sources.
 The following remain unresolved after M1-C acceptance:
 
 - implementation and conformance testing of the accepted Career Ontology
-  `5.0` schema, including executable migration from ontology versions `4` and
-  `0.5`;
+  `5.0` schema;
+- a separately specified migration capability for earlier ontology versions
+  and conceptual source material;
 - one unified public result contract across binding tables, paths, temporal
   answers, and `GraphView`;
 - schema-aware query-plan candidate and validation boundaries;

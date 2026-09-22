@@ -11,6 +11,7 @@ from typing import assert_never
 from caron.entities import EntityId, EntityRef, PropertyValue
 from caron.realisations import ValidatedRealisation
 from caron.relations import RelationId
+from caron.temporal import YearMonth
 from caron.views import GraphView, QueryWitness
 
 
@@ -24,7 +25,7 @@ class RelationValue:
     relation_id: RelationId
 
 
-type BoundValue = EntityValue | RelationValue | str | int | None
+type BoundValue = EntityValue | RelationValue | str | int | YearMonth | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -132,7 +133,7 @@ class AlgebraRelation:
     rows: tuple[AlgebraRow, ...]
 
 
-type AnswerValue = str | int | None
+type AnswerValue = str | int | YearMonth | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -308,6 +309,8 @@ def _extend(
 def _property_value(value: PropertyValue) -> BoundValue:
     if isinstance(value, EntityRef):
         return EntityValue(value.entity_id)
+    if isinstance(value, YearMonth):
+        return value
     if isinstance(value, str) or isinstance(value, int) and not isinstance(value, bool):
         return value
     raise TypeError("the internal algebra can only bind scalar or entity properties")
@@ -378,10 +381,12 @@ def _sortable_value(value: BoundValue) -> tuple[int, int, str | int]:
             return (0, 0, entity_id)
         case RelationValue(relation_id):
             return (0, 1, relation_id)
+        case YearMonth() as month:
+            return (0, 2, month.month_index)
         case int():
-            return (0, 2, value)
-        case str():
             return (0, 3, value)
+        case str():
+            return (0, 4, value)
 
 
 def _order_by(
@@ -452,7 +457,7 @@ def _answer_value(value: BoundValue) -> AnswerValue:
             return entity_id
         case RelationValue(relation_id):
             return relation_id
-        case None | str() | int():
+        case None | str() | int() | YearMonth():
             return value
 
 

@@ -15,6 +15,7 @@ class ValueKind(StrEnum):
     TEXT = "text"
     INTEGER = "integer"
     ENTITY_REFERENCE = "entity_reference"
+    YEAR_MONTH = "year_month"
     TEMPORAL_EXTENT = "temporal_extent"
 
 
@@ -73,12 +74,20 @@ class RelationRequirement:
 
 
 @dataclass(frozen=True, slots=True)
+class InvariantDefinition:
+    """Inspectable declaration of a realisation-wide validity rule."""
+
+    id: str
+
+
+@dataclass(frozen=True, slots=True)
 class OntologySchema:
     id: str
     version: str
     concepts: tuple[ConceptDefinition, ...]
     relations: tuple[RelationDefinition, ...]
     requirements: tuple[RelationRequirement, ...] = ()
+    invariants: tuple[InvariantDefinition, ...] = ()
 
     def concept(self, concept_id: ConceptId) -> ConceptDefinition | None:
         return next((item for item in self.concepts if item.id == concept_id), None)
