@@ -1,0 +1,369 @@
+# Authored career-wide exercise, grounded in Career_Reference_vf.md and the
+# maintained v5 examples. This is a selective evidence graph, not a biography.
+format_version: "0.1"
+ontology:
+  id: "caron.career-model"
+  version: "5.0"
+realisation:
+  id: "fixture:career-across-contexts"
+  coverage:
+    status: "selective"
+    scope: >-
+      Selected education, research internships, PhD research strands, and later
+      software work; the full career reference contains additional facts.
+
+entities:
+  - id: "person:matteo"
+    kind: "Person"
+    properties: {label: "Mattéo"}
+
+  # Contexts give activities their local setting; subcontexts inherit time.
+  - id: "context:cpge"
+    kind: "Context"
+    properties:
+      label: "CPGE at Lycée Saint-Louis"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2017-09"
+        end: {known: "2019-07"}
+  - id: "context:engineering"
+    kind: "Context"
+    properties:
+      label: "Engineering education at IMT Atlantique"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2019-09"
+        end: {known: "2022-09"}
+  - id: "context:open-data"
+    kind: "Context"
+    properties: {label: "Student open-data project"}
+  - id: "context:iap-internship"
+    kind: "Context"
+    properties:
+      label: "IAP astrophysics internship"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2021-01"
+        end: {known: "2021-03"}
+  - id: "context:msc"
+    kind: "Context"
+    properties:
+      label: "MSc in subatomic physics at Université de Nantes"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2021-09"
+        end: {known: "2022-09"}
+  - id: "context:alice"
+    kind: "Context"
+    properties:
+      label: "ALICE data-analysis project"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2021-11"
+        end: {known: "2022-02"}
+  - id: "context:geant4-course"
+    kind: "Context"
+    properties: {label: "GEANT4 practical coursework"}
+  - id: "context:cea-internship"
+    kind: "Context"
+    properties:
+      label: "CEA FIPPS detector-characterisation internship"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2022-03"
+        end: {known: "2022-09"}
+  - id: "context:phd"
+    kind: "Context"
+    properties:
+      label: "PhD in nuclear physics at CEA Paris-Saclay"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2022-10"
+        end: {known: "2025-10"}
+  - id: "context:gamma-analysis"
+    kind: "Context"
+    properties: {label: "Delayed gamma-ray analysis with FIPPS"}
+  - id: "context:gamma-ml"
+    kind: "Context"
+    properties: {label: "Automated gamma-gamma analysis"}
+  - id: "context:synthetic-data"
+    kind: "Context"
+    properties: {label: "Synthetic training-data generation"}
+  - id: "context:beta-spectrometer"
+    kind: "Context"
+    properties: {label: "Beta-spectrometer development"}
+  - id: "context:jax-project"
+    kind: "Context"
+    properties:
+      label: "Self-directed JAX discrete-measure software work"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2026-04"
+        end: {ongoing_as_of: "2026-09"}
+
+  # Meaningful activities rather than decontextualised skills.
+  - id: "activity:solve-physics-problems"
+    kind: "Activity"
+    properties: {label: "Work through mathematics and physics problems"}
+  - id: "activity:build-open-data-poc"
+    kind: "Activity"
+    properties: {label: "Build a public-transport open-data proof of concept"}
+  - id: "activity:fit-galaxy-spectra"
+    kind: "Activity"
+    properties: {label: "Fit galaxy observations to PÉGASE predictions"}
+  - id: "activity:analyse-alice-data"
+    kind: "Activity"
+    properties: {label: "Analyse ALICE muon-spectrometer data"}
+  - id: "activity:characterise-fipps-detectors"
+    kind: "Activity"
+    properties: {label: "Characterise FIPPS detector response"}
+  - id: "activity:analyse-gamma-cascades"
+    kind: "Activity"
+    properties: {label: "Analyse delayed gamma-gamma coincidences"}
+  - id: "activity:modify-fipps-simulation"
+    kind: "Activity"
+    properties: {label: "Modify the FIPPS detector simulation"}
+  - id: "activity:generate-synthetic-spectra"
+    kind: "Activity"
+    properties: {label: "Generate controlled synthetic gamma-gamma spectra"}
+  - id: "activity:train-unet"
+    kind: "Activity"
+    properties: {label: "Train and evaluate U-Net models"}
+  - id: "activity:simulate-beta-telescope"
+    kind: "Activity"
+    properties: {label: "Implement the beta-spectrometer simulation"}
+  - id: "activity:compare-detector-geometries"
+    kind: "Activity"
+    properties: {label: "Compare detector and collimator configurations"}
+  - id: "activity:present-ml-work"
+    kind: "Activity"
+    properties: {label: "Present machine-learning research in English"}
+  - id: "activity:implement-jax-losses"
+    kind: "Activity"
+    properties: {label: "Implement losses for discrete measures in JAX"}
+
+  # Identities reused across contexts enable histories without skill facts.
+  - {id: "technology:python", kind: "Technology", properties: {label: "Python"}}
+  - {id: "technology:pandas", kind: "Technology", properties: {label: "pandas"}}
+  - {id: "technology:pegase", kind: "Technology", properties: {label: "PÉGASE"}}
+  - {id: "technology:geant4", kind: "Technology", properties: {label: "GEANT4"}}
+  - {id: "technology:root", kind: "Technology", properties: {label: "ROOT"}}
+  - {id: "technology:cpp", kind: "Technology", properties: {label: "C++"}}
+  - {id: "technology:numpy", kind: "Technology", properties: {label: "NumPy"}}
+  - {id: "technology:polars", kind: "Technology", properties: {label: "Polars"}}
+  - {id: "technology:hdf5", kind: "Technology", properties: {label: "HDF5"}}
+  - {id: "technology:pytorch", kind: "Technology", properties: {label: "PyTorch"}}
+  - {id: "technology:slurm", kind: "Technology", properties: {label: "SLURM"}}
+  - {id: "technology:jax", kind: "Technology", properties: {label: "JAX"}}
+  - {id: "method:chi-squared-fit", kind: "Method", properties: {label: "Chi-squared fitting"}}
+  - {id: "method:peak-fitting", kind: "Method", properties: {label: "Peak fitting"}}
+  - {id: "method:monte-carlo-transport", kind: "Method", properties: {label: "Monte Carlo particle transport"}}
+  - {id: "method:dense-regression", kind: "Method", properties: {label: "Dense regression"}}
+  - {id: "subject:physics", kind: "Subject", properties: {label: "Physics"}}
+  - {id: "subject:particle-physics", kind: "Subject", properties: {label: "Particle physics"}}
+  - {id: "subject:gamma-spectroscopy", kind: "Subject", properties: {label: "Gamma spectroscopy"}}
+  - {id: "subject:beta-decay", kind: "Subject", properties: {label: "Beta decay"}}
+  - {id: "language:english", kind: "Language", properties: {label: "English"}}
+
+  - {id: "organization:imt", kind: "Organization", properties: {label: "IMT Atlantique"}}
+  - {id: "organization:iap", kind: "Organization", properties: {label: "Institut d’Astrophysique de Paris"}}
+  - {id: "organization:nantes", kind: "Organization", properties: {label: "Université de Nantes"}}
+  - {id: "organization:cea", kind: "Organization", properties: {label: "CEA"}}
+  - {id: "organization:paris-saclay", kind: "Organization", properties: {label: "Université Paris-Saclay"}}
+
+  - {id: "artifact:open-data-poc", kind: "Artifact", properties: {label: "Open-data proof of concept"}}
+  - {id: "artifact:fit-py", kind: "Artifact", properties: {label: "FIT.py analysis tool"}}
+  - {id: "artifact:alice-dataset", kind: "Artifact", properties: {label: "ALICE muon-spectrometer dataset"}}
+  - {id: "artifact:eu-calibration-data", kind: "Artifact", properties: {label: "Europium calibration data"}}
+  - {id: "artifact:fipps-simulation", kind: "Artifact", properties: {label: "FIPPS GEANT4 simulation"}}
+  - {id: "artifact:gamma-coincidence-data", kind: "Artifact", properties: {label: "FIPPS gamma-gamma coincidence histograms"}}
+  - {id: "artifact:synthetic-generator", kind: "Artifact", properties: {label: "Synthetic-spectrum generation code"}}
+  - {id: "artifact:synthetic-dataset", kind: "Artifact", properties: {label: "Labelled synthetic spectrum dataset"}}
+  - {id: "artifact:unet-code", kind: "Artifact", properties: {label: "U-Net training and evaluation code"}}
+  - {id: "artifact:beta-simulation", kind: "Artifact", properties: {label: "Beta-telescope GEANT4 simulation"}}
+  - {id: "artifact:jax-codebase", kind: "Artifact", properties: {label: "Discrete-measure software codebase"}}
+
+  - id: "proposition:rb90-discrepancy"
+    kind: "Proposition"
+    properties:
+      label: "Rb-90 cascade discrepancy"
+      content: "The measured cascade contribution differs from evaluated data by approximately 40%."
+      context: {type: "entity_ref", id: "context:gamma-analysis"}
+  - id: "proposition:unet-bin-instability"
+    kind: "Proposition"
+    properties:
+      label: "U-Net bin-boundary instability"
+      content: "Initial U-Net training was unstable for peaks near bin boundaries."
+      context: {type: "entity_ref", id: "context:gamma-ml"}
+  - id: "proposition:collimator-tradeoff"
+    kind: "Proposition"
+    properties:
+      label: "Collimator tradeoff"
+      content: "The tungsten collimator improved gamma rejection but degraded reconstructed energy fidelity."
+      context: {type: "entity_ref", id: "context:beta-spectrometer"}
+
+  - id: "credential:doctorate"
+    kind: "Credential"
+    properties:
+      label: "Doctorate in nuclear physics"
+      awarded_in: {type: "year_month", value: "2025-10"}
+
+relations:
+  # A local context can have several valid parents (the final internship did).
+  - {id: "r:open-data-part-of-engineering", kind: "part_of", source: "context:open-data", target: "context:engineering"}
+  - {id: "r:alice-part-of-msc", kind: "part_of", source: "context:alice", target: "context:msc"}
+  - {id: "r:geant4-course-part-of-msc", kind: "part_of", source: "context:geant4-course", target: "context:msc"}
+  - {id: "r:cea-internship-part-of-msc", kind: "part_of", source: "context:cea-internship", target: "context:msc"}
+  - {id: "r:cea-internship-part-of-engineering", kind: "part_of", source: "context:cea-internship", target: "context:engineering"}
+  - {id: "r:gamma-analysis-part-of-phd", kind: "part_of", source: "context:gamma-analysis", target: "context:phd"}
+  - {id: "r:gamma-ml-part-of-phd", kind: "part_of", source: "context:gamma-ml", target: "context:phd"}
+  - {id: "r:synthetic-data-part-of-ml", kind: "part_of", source: "context:synthetic-data", target: "context:gamma-ml"}
+  - {id: "r:beta-spectrometer-part-of-phd", kind: "part_of", source: "context:beta-spectrometer", target: "context:phd"}
+
+  # Personal participation and institutional associations stay contextual.
+  - id: "r:matteo-participates-engineering"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:engineering"
+    qualifiers:
+      role: "engineering student"
+      organization: {type: "entity_ref", id: "organization:imt"}
+  - id: "r:matteo-participates-cpge"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:cpge"
+    qualifiers: {role: "preparatory student"}
+  - id: "r:matteo-participates-iap"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:iap-internship"
+    qualifiers:
+      role: "research intern"
+      organization: {type: "entity_ref", id: "organization:iap"}
+  - id: "r:matteo-participates-msc"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:msc"
+    qualifiers:
+      role: "MSc student"
+      organization: {type: "entity_ref", id: "organization:nantes"}
+  - id: "r:matteo-participates-cea-internship"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:cea-internship"
+    qualifiers:
+      role: "research intern"
+      organization: {type: "entity_ref", id: "organization:cea"}
+  - id: "r:matteo-participates-phd"
+    kind: "participates_in"
+    source: "person:matteo"
+    target: "context:phd"
+    qualifiers:
+      role: "doctoral researcher"
+      organization: {type: "entity_ref", id: "organization:cea"}
+  - id: "r:imt-associated-engineering"
+    kind: "organization_association"
+    source: "organization:imt"
+    target: "context:engineering"
+    qualifiers: {role: "engineering school"}
+  - id: "r:iap-associated-internship"
+    kind: "organization_association"
+    source: "organization:iap"
+    target: "context:iap-internship"
+    qualifiers: {role: "host institution"}
+  - id: "r:cea-associated-phd"
+    kind: "organization_association"
+    source: "organization:cea"
+    target: "context:phd"
+    qualifiers: {role: "host institution"}
+
+  # Each Activity has one local Context and an explicit performer.
+  - {id: "r:performs-physics", kind: "performs", source: "person:matteo", target: "activity:solve-physics-problems"}
+  - {id: "r:physics-occurs-cpge", kind: "occurs_in", source: "activity:solve-physics-problems", target: "context:cpge"}
+  - {id: "r:performs-open-data", kind: "performs", source: "person:matteo", target: "activity:build-open-data-poc"}
+  - {id: "r:open-data-occurs-project", kind: "occurs_in", source: "activity:build-open-data-poc", target: "context:open-data"}
+  - {id: "r:performs-galaxy-fitting", kind: "performs", source: "person:matteo", target: "activity:fit-galaxy-spectra"}
+  - {id: "r:galaxy-fitting-occurs-iap", kind: "occurs_in", source: "activity:fit-galaxy-spectra", target: "context:iap-internship"}
+  - {id: "r:performs-alice-analysis", kind: "performs", source: "person:matteo", target: "activity:analyse-alice-data"}
+  - {id: "r:alice-analysis-occurs-project", kind: "occurs_in", source: "activity:analyse-alice-data", target: "context:alice"}
+  - {id: "r:performs-detector-characterisation", kind: "performs", source: "person:matteo", target: "activity:characterise-fipps-detectors"}
+  - {id: "r:characterisation-occurs-internship", kind: "occurs_in", source: "activity:characterise-fipps-detectors", target: "context:cea-internship"}
+  - {id: "r:performs-gamma-analysis", kind: "performs", source: "person:matteo", target: "activity:analyse-gamma-cascades"}
+  - {id: "r:gamma-analysis-occurs-fipps", kind: "occurs_in", source: "activity:analyse-gamma-cascades", target: "context:gamma-analysis"}
+  - {id: "r:performs-fipps-simulation", kind: "performs", source: "person:matteo", target: "activity:modify-fipps-simulation"}
+  - {id: "r:fipps-simulation-occurs-gamma", kind: "occurs_in", source: "activity:modify-fipps-simulation", target: "context:gamma-analysis"}
+  - {id: "r:performs-synthetic-generation", kind: "performs", source: "person:matteo", target: "activity:generate-synthetic-spectra"}
+  - {id: "r:synthetic-generation-occurs-local", kind: "occurs_in", source: "activity:generate-synthetic-spectra", target: "context:synthetic-data"}
+  - {id: "r:performs-unet-training", kind: "performs", source: "person:matteo", target: "activity:train-unet"}
+  - {id: "r:unet-training-occurs-ml", kind: "occurs_in", source: "activity:train-unet", target: "context:gamma-ml"}
+  - {id: "r:performs-beta-simulation", kind: "performs", source: "person:matteo", target: "activity:simulate-beta-telescope"}
+  - {id: "r:beta-simulation-occurs-project", kind: "occurs_in", source: "activity:simulate-beta-telescope", target: "context:beta-spectrometer"}
+  - {id: "r:performs-geometry-comparison", kind: "performs", source: "person:matteo", target: "activity:compare-detector-geometries"}
+  - {id: "r:geometry-comparison-occurs-project", kind: "occurs_in", source: "activity:compare-detector-geometries", target: "context:beta-spectrometer"}
+  - {id: "r:performs-ml-presentation", kind: "performs", source: "person:matteo", target: "activity:present-ml-work"}
+  - {id: "r:ml-presentation-occurs-phd", kind: "occurs_in", source: "activity:present-ml-work", target: "context:phd"}
+  - {id: "r:performs-jax-losses", kind: "performs", source: "person:matteo", target: "activity:implement-jax-losses"}
+  - {id: "r:jax-losses-occurs-project", kind: "occurs_in", source: "activity:implement-jax-losses", target: "context:jax-project"}
+
+  # The same Python and GEANT4 nodes recur; no transfer fact is asserted.
+  - id: "r:learns-geant4-msc"
+    kind: "learns"
+    source: "person:matteo"
+    target: "technology:geant4"
+    qualifiers:
+      context: {type: "entity_ref", id: "context:geant4-course"}
+  - {id: "r:open-data-uses-python", kind: "uses_technology", source: "activity:build-open-data-poc", target: "technology:python"}
+  - {id: "r:galaxy-fit-uses-python", kind: "uses_technology", source: "activity:fit-galaxy-spectra", target: "technology:python"}
+  - {id: "r:galaxy-fit-uses-pegase", kind: "uses_technology", source: "activity:fit-galaxy-spectra", target: "technology:pegase"}
+  - {id: "r:galaxy-fit-uses-numpy", kind: "uses_technology", source: "activity:fit-galaxy-spectra", target: "technology:numpy"}
+  - {id: "r:alice-uses-python", kind: "uses_technology", source: "activity:analyse-alice-data", target: "technology:python"}
+  - {id: "r:alice-uses-pandas", kind: "uses_technology", source: "activity:analyse-alice-data", target: "technology:pandas"}
+  - {id: "r:characterisation-uses-root", kind: "uses_technology", source: "activity:characterise-fipps-detectors", target: "technology:root"}
+  - {id: "r:characterisation-uses-cpp", kind: "uses_technology", source: "activity:characterise-fipps-detectors", target: "technology:cpp"}
+  - {id: "r:gamma-analysis-uses-root", kind: "uses_technology", source: "activity:analyse-gamma-cascades", target: "technology:root"}
+  - {id: "r:gamma-analysis-uses-python", kind: "uses_technology", source: "activity:analyse-gamma-cascades", target: "technology:python"}
+  - {id: "r:fipps-simulation-uses-geant4", kind: "uses_technology", source: "activity:modify-fipps-simulation", target: "technology:geant4"}
+  - {id: "r:fipps-simulation-uses-cpp", kind: "uses_technology", source: "activity:modify-fipps-simulation", target: "technology:cpp"}
+  - {id: "r:synthetic-uses-python", kind: "uses_technology", source: "activity:generate-synthetic-spectra", target: "technology:python"}
+  - {id: "r:synthetic-uses-numpy", kind: "uses_technology", source: "activity:generate-synthetic-spectra", target: "technology:numpy"}
+  - {id: "r:synthetic-uses-polars", kind: "uses_technology", source: "activity:generate-synthetic-spectra", target: "technology:polars"}
+  - {id: "r:synthetic-uses-hdf5", kind: "uses_technology", source: "activity:generate-synthetic-spectra", target: "technology:hdf5"}
+  - {id: "r:unet-uses-python", kind: "uses_technology", source: "activity:train-unet", target: "technology:python"}
+  - {id: "r:unet-uses-pytorch", kind: "uses_technology", source: "activity:train-unet", target: "technology:pytorch"}
+  - {id: "r:unet-uses-slurm", kind: "uses_technology", source: "activity:train-unet", target: "technology:slurm"}
+  - {id: "r:beta-simulation-uses-geant4", kind: "uses_technology", source: "activity:simulate-beta-telescope", target: "technology:geant4"}
+  - {id: "r:beta-simulation-uses-cpp", kind: "uses_technology", source: "activity:simulate-beta-telescope", target: "technology:cpp"}
+  - {id: "r:comparison-uses-python", kind: "uses_technology", source: "activity:compare-detector-geometries", target: "technology:python"}
+  - {id: "r:jax-losses-uses-jax", kind: "uses_technology", source: "activity:implement-jax-losses", target: "technology:jax"}
+  - {id: "r:jax-losses-uses-python", kind: "uses_technology", source: "activity:implement-jax-losses", target: "technology:python"}
+  - {id: "r:presentation-uses-english", kind: "uses_language", source: "activity:present-ml-work", target: "language:english"}
+
+  # Resources and outputs preserve the evidence path for later queries.
+  - {id: "r:open-data-produces-poc", kind: "produces", source: "activity:build-open-data-poc", target: "artifact:open-data-poc"}
+  - {id: "r:galaxy-fit-applies-chi-square", kind: "applies", source: "activity:fit-galaxy-spectra", target: "method:chi-squared-fit"}
+  - {id: "r:cpge-draws-on-physics", kind: "draws_on", source: "activity:solve-physics-problems", target: "subject:physics"}
+  - {id: "r:galaxy-fit-produces-tool", kind: "produces", source: "activity:fit-galaxy-spectra", target: "artifact:fit-py"}
+  - {id: "r:alice-draws-on-particle-physics", kind: "draws_on", source: "activity:analyse-alice-data", target: "subject:particle-physics"}
+  - {id: "r:alice-takes-dataset", kind: "takes_input", source: "activity:analyse-alice-data", target: "artifact:alice-dataset"}
+  - {id: "r:characterisation-takes-eu-data", kind: "takes_input", source: "activity:characterise-fipps-detectors", target: "artifact:eu-calibration-data"}
+  - {id: "r:gamma-analysis-applies-peak-fitting", kind: "applies", source: "activity:analyse-gamma-cascades", target: "method:peak-fitting"}
+  - {id: "r:gamma-analysis-draws-on-spectroscopy", kind: "draws_on", source: "activity:analyse-gamma-cascades", target: "subject:gamma-spectroscopy"}
+  - {id: "r:gamma-analysis-takes-coincidences", kind: "takes_input", source: "activity:analyse-gamma-cascades", target: "artifact:gamma-coincidence-data"}
+  - {id: "r:gamma-analysis-establishes-discrepancy", kind: "establishes", source: "activity:analyse-gamma-cascades", target: "proposition:rb90-discrepancy"}
+  - {id: "r:fipps-simulation-modifies-artifact", kind: "modifies", source: "activity:modify-fipps-simulation", target: "artifact:fipps-simulation"}
+  - {id: "r:synthetic-produces-generator", kind: "produces", source: "activity:generate-synthetic-spectra", target: "artifact:synthetic-generator"}
+  - {id: "r:synthetic-produces-dataset", kind: "produces", source: "activity:generate-synthetic-spectra", target: "artifact:synthetic-dataset"}
+  - {id: "r:unet-applies-regression", kind: "applies", source: "activity:train-unet", target: "method:dense-regression"}
+  - {id: "r:unet-takes-dataset", kind: "takes_input", source: "activity:train-unet", target: "artifact:synthetic-dataset"}
+  - {id: "r:unet-produces-code", kind: "produces", source: "activity:train-unet", target: "artifact:unet-code"}
+  - {id: "r:unet-results-in-instability", kind: "results_in", source: "activity:train-unet", target: "proposition:unet-bin-instability"}
+  - {id: "r:beta-simulation-applies-monte-carlo", kind: "applies", source: "activity:simulate-beta-telescope", target: "method:monte-carlo-transport"}
+  - {id: "r:beta-simulation-draws-on-decay", kind: "draws_on", source: "activity:simulate-beta-telescope", target: "subject:beta-decay"}
+  - {id: "r:beta-simulation-produces-artifact", kind: "produces", source: "activity:simulate-beta-telescope", target: "artifact:beta-simulation"}
+  - {id: "r:comparison-takes-simulation", kind: "takes_input", source: "activity:compare-detector-geometries", target: "artifact:beta-simulation"}
+  - {id: "r:comparison-establishes-tradeoff", kind: "establishes", source: "activity:compare-detector-geometries", target: "proposition:collimator-tradeoff"}
+  - {id: "r:jax-losses-produces-codebase", kind: "produces", source: "activity:implement-jax-losses", target: "artifact:jax-codebase"}
+
+  - {id: "r:doctorate-awarded-to-matteo", kind: "awarded_to", source: "credential:doctorate", target: "person:matteo"}
+  - {id: "r:doctorate-awarded-by-university", kind: "awarded_by", source: "credential:doctorate", target: "organization:paris-saclay"}
+  - {id: "r:doctorate-obtained-through-phd", kind: "obtained_through", source: "credential:doctorate", target: "context:phd"}

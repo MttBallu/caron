@@ -2,6 +2,7 @@
 
 import subprocess
 import sys
+from importlib.util import find_spec
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -95,6 +96,45 @@ def main() -> None:
         _run(
             "installed public API smoke test",
             [str(installed_python), "-I", "-c", smoke_test],
+            cwd=temporary,
+        )
+
+        yaml_spec = find_spec("yaml")
+        if yaml_spec is None or yaml_spec.origin is None:
+            raise RuntimeError("PyYAML is required to verify the installed reader")
+        yaml_site_packages = Path(yaml_spec.origin).parent.parent
+        bundled_smoke_test = "\n".join(
+            (
+                "import sys",
+                "from pathlib import Path",
+                # The wheel was installed without fetching dependencies. Supply only
+                # the already-installed YAML dependency to this isolated process.
+                f"sys.path.append({str(yaml_site_packages)!r})",
+                "import caron",
+                "from caron import CoveredMonthKind, TemporalClassification, "
+                "before, covered_months, select_whole_realisation",
+                "from caron._bundled_realisation import "
+                "load_bundled_career_realisation",
+                "from caron.yaml_reader import LoadAccepted",
+                f"assert Path(caron.__file__).is_relative_to({str(environment)!r})",
+                "result = load_bundled_career_realisation()",
+                "assert isinstance(result, LoadAccepted), result",
+                "assert result.source_path.is_file()",
+                "assert result.source_path.is_relative_to(Path(caron.__file__).parent)",
+                "graph = result.realisation",
+                "assert len(graph.entities) >= 60 and len(graph.relations) >= 80",
+                "assert before(graph, 'activity:analyse-alice-data', "
+                "'activity:simulate-beta-telescope').classification "
+                "is TemporalClassification.ENTAILED",
+                "assert covered_months(graph, 'context:cea-internship').kind "
+                "is CoveredMonthKind.EXACT",
+                "assert any(item.id == 'r:learns-geant4-msc' "
+                "for item in select_whole_realisation(graph).relations)",
+            )
+        )
+        _run(
+            "installed career resource and query smoke test",
+            [str(installed_python), "-I", "-c", bundled_smoke_test],
             cwd=temporary,
         )
 

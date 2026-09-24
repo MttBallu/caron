@@ -33,11 +33,13 @@ The maintained implementation includes:
 - a small typed temporal-query catalogue with explicit epistemic
   classifications and retained witnesses;
 - renderer-independent immutable `GraphView` selections;
-- a private witness-carrying query-algebra experiment; and
+- a private witness-carrying query-algebra experiment;
+- a single-file YAML reader and tagged-value binder that feed the existing
+  candidate validator, with file-aware load findings; and
 - schema and realisation viewers derived from the executable model.
 
-The package does not yet provide persistence, canonical serialization,
-migration, a public query language, an application service, or a CLI.
+The package does not yet provide a writer, canonical serialization, durable
+storage, migration, a public query language, an application service, or a CLI.
 
 ## 2. Source layout
 
@@ -57,6 +59,10 @@ caron/
 │   ├── temporal.py
 │   ├── diagnostics.py
 │   ├── validation.py
+│   ├── yaml_reader.py
+│   ├── _bundled_realisation.py
+│   ├── data/
+│   │   └── career-across-contexts-v0.1.yaml
 │   ├── queries.py
 │   ├── views.py
 │   ├── _invariants.py
@@ -97,6 +103,8 @@ therefore uses `module-root = ""`.
 | `_invariants.py` | Private staged invariant registry and local handlers | Public schema declarations |
 | `_career_v5_invariants.py` | Private ontology `5.0` graph-invariant implementations | Schema identity and public queries |
 | `validation.py` | Ontology self-validation and the candidate-to-validated boundary | Parsing, persistence, interpretation |
+| `yaml_reader.py` | Single-file YAML read, typed binding, source locations and load outcomes | Ontology-specific semantic validation, writing, migrations |
+| `_bundled_realisation.py` and `data/` | Internal path and one installed, selective career file | Public semantic imports, multi-file assembly, writer |
 | `queries.py` | Typed temporal operations and explicit whole-graph selection | General public plan language |
 | `_query_algebra.py` | Private joins, optional matching, union, extension, projection, ordering, and witness derivation | Stable public query-plan contract |
 | `views.py` | Immutable `GraphView`, bindings, witnesses, and coverage | Evaluation and presentation state |
