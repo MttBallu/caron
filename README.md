@@ -26,6 +26,53 @@ uv run python -m examples.semantic_spine
 uv run python -m examples.temporal_queries
 ```
 
+## Read an internal realisation fixture
+
+`caron.yaml_reader` reads one package-maintained UTF-8 YAML file in format `"0.1"` against the exact executable ontology `5.0`. A small test-only example is in
+[`tests/fixtures/geant4-learning-and-activity-v0.1.yaml`](tests/fixtures/geant4-learning-and-activity-v0.1.yaml).
+
+```python
+from caron import career_ontology_v5_0
+from caron.yaml_reader import LoadAccepted, load_realisation_yaml
+
+result = load_realisation_yaml(
+    "tests/fixtures/geant4-learning-and-activity-v0.1.yaml",
+    ontology=career_ontology_v5_0(),
+)
+if isinstance(result, LoadAccepted):
+    graph = result.realisation
+else:
+    for finding in result.findings:
+        print(finding.code, finding.location, finding.message)
+```
+
+The reader checks file access and YAML structure, binds explicit value tags,
+then calls the existing `validate_candidate` function. It returns a validated
+graph only on acceptance. Rejections keep the validator's semantic codes and
+add source locations when possible. `source_state_id` is a SHA-256 hash of the
+exact bytes read; it is separate from the authored realisation ID. The root
+semantic API and direct in-memory validation do not depend on YAML. This is a
+read-only internal file profile; no writer or canonical storage format is defined.
+
+The [larger career realisation](caron/data/career-across-contexts-v0.1.yaml) ships inside the package. Internal code can load it without knowing the installation path:
+
+```python
+from caron._bundled_realisation import load_bundled_career_realisation
+from caron.yaml_reader import LoadAccepted
+
+result = load_bundled_career_realisation()
+if isinstance(result, LoadAccepted):
+    graph = result.realisation
+```
+
+This file exercises shared Python and GEANT4 identities, an internship with two parent contexts, PhD research strands, propositions, a credential, and a later software project. Its `selective` coverage records that this is a broad test of loading and querying, not an exhaustive claim about the career. It is package-maintained data, not an interactive editing format. A header comment names the working career reference and maintained examples that informed the file; it is a review aid, not per-assertion provenance. Git records edits, while semantic validation checks the graph. Neither replaces a later source-truth policy if the project needs one.
+
+Unquoted scalars have a controlled grammar: lowercase `true`, `false`, `null`,
+base-ten integers, and decimal or scientific-notation floats are decoded as
+their respective types; other unquoted scalars are text, except timestamps and
+non-finite numbers, which are rejected. Quote strings that resemble numbers or
+Booleans.
+
 ## Interactive examples
 
 Generate the executable ontology-schema overview:

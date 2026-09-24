@@ -27,6 +27,7 @@ from the ontology version.
 | Artifact | Status | Authority |
 |---|---|---|
 | `caron/` | Current executable authority | Runtime types, ontology schemas, validation, queries, views, and internal algebra |
+| `caron/data/` | Package-maintained career realisation | One installed selective YAML file; validation and ontology remain authoritative for its semantics |
 | `tests/` | Current executable regressions | Accepted behavior and non-inferences |
 | `docs/career-model-v0.5-temporal-contract.md` | Normative for v0.5 temporality | Temporal value, validation, and query semantics |
 | `docs/career-ontology-package-boundaries.md` | Normative architecture note | Package ownership and public/private boundaries |
@@ -70,6 +71,19 @@ All eight declared handlers are implemented, ontology self-validation
 succeeds, and conforming exact `5.0` candidates can be validated. The retained
 query behaviors run against that accepted schema without changing its positive
 assertion set.
+
+An initial read-only YAML adapter now loads a single format `0.1` file for
+exact ontology `5.0`. Its explicit value tags bind to the same typed candidate
+records used by direct callers, and `validate_candidate` remains the sole
+semantic validation boundary. Loader findings carry file locations separately
+from the semantic records. One broad career file now ships under `caron/data/`;
+the internal loader reads and validates it from the installed package. Small
+examples and failure probes live in `tests/`; canonical writing, durable
+storage, and migrations remain open decisions.
+
+The YAML files are package-maintained, not interactive documents. The broad
+career realisation remains a single installed file; its source comment provides
+review context without adding per-assertion provenance to the realisation format.
 
 Validation is staged: record shape, identifiers, required text, typed values,
 and reference closure must pass before cardinalities and graph invariants run.

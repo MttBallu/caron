@@ -1,0 +1,56 @@
+format_version: "0.1"
+ontology:
+  id: "caron.career-model"
+  version: "5.0"
+realisation:
+  id: "fixture:geant4-learning-and-activity"
+  coverage:
+    status: "selective"
+    scope: "Selected GEANT4 learning and activity facts"
+
+entities:
+  - id: "person:matteo"
+    kind: "Person"
+    properties:
+      label: "Mattéo"
+  - id: "technology:geant4"
+    kind: "Technology"
+    properties:
+      label: "GEANT4"
+  - id: "context:msc"
+    kind: "Context"
+    properties:
+      label: "MSc"
+  - id: "context:phd"
+    kind: "Context"
+    properties:
+      label: "PhD"
+      temporal_extent:
+        type: "temporal_extent"
+        start: "2022-10"
+        end:
+          known: "2025-10"
+  - id: "activity:simulate-detector"
+    kind: "Activity"
+    properties:
+      label: "Simulate a detector"
+
+relations:
+  - id: "relation:learns-geant4"
+    kind: "learns"
+    source: "person:matteo"
+    target: "technology:geant4"
+    qualifiers:
+      context: {type: "entity_ref", id: "context:msc"}
+  - id: "relation:performs-simulation"
+    kind: "performs"
+    source: "person:matteo"
+    target: "activity:simulate-detector"
+  - id: "relation:simulation-context"
+    kind: "occurs_in"
+    source: "activity:simulate-detector"
+    target: "context:phd"
+  - id: "relation:simulation-uses-geant4"
+    kind: "uses_technology"
+    source: "activity:simulate-detector"
+    target: "technology:geant4"

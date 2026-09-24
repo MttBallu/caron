@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "A typed career-ontology implementation."
 readme = "career-ontology-package-skeleton.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["PyYAML>=6.0"]
 
 [dependency-groups]
 dev = [
@@ -12,6 +12,7 @@ dev = [
     "mypy>=2.3.1",
     "pytest",
     "ruff>=0.16.8",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [build-system]
