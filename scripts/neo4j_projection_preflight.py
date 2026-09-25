@@ -24,7 +24,8 @@ def main() -> None:
         driver.verify_connectivity()
         with driver.session(database=database) as session:
             component = session.run(
-                "CALL dbms.components() YIELD versions, edition "
+                "CALL dbms.components() YIELD name, versions, edition "
+                "WHERE name = 'Neo4j Kernel' "
                 "RETURN versions[0] AS version, edition"
             ).single(strict=True)
             setting = session.run(

@@ -73,7 +73,8 @@ def test_live_projection_counts_ids_and_transaction_rollback(
     driver, database = connection
     with driver.session(database=database) as session:
         component = session.run(
-            "CALL dbms.components() YIELD versions, edition "
+            "CALL dbms.components() YIELD name, versions, edition "
+            "WHERE name = 'Neo4j Kernel' "
             "RETURN versions[0] AS version, edition"
         ).single()
         assert component is not None
