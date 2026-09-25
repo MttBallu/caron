@@ -28,6 +28,7 @@ from caron.adapters.neo4j_projection import (
     project_snapshot,
 )
 from caron.adapters.neo4j_reconstruction import extract_snapshot
+from caron.adapters.neo4j_results import Request, evaluate_projected_matches
 from caron.adapters.neo4j_retrieval import (
     ActivityRow,
     LearningRow,
@@ -167,6 +168,29 @@ def test_live_structural_case(
         assert rows.activity == expected_activity
         assert rows.realisation_id == checked.realisation.id
         assert rows.coverage == checked.realisation.coverage
+        assembled = evaluate_projected_matches(
+            driver,
+            request=Request("p", "x"),
+            expected_realisation_id=checked.realisation.id,
+            database=database,
+        )
+        assert assembled.diagnostics == ()
+        assert assembled.view is not None
+        assert len(assembled.matches) == len(expected_learning) + len(expected_activity)
+        assert {item.id for item in assembled.view.relations} == {
+            row.learns_id for row in expected_learning
+        } | {
+            relation_id
+            for row in expected_activity
+            for relation_id in (
+                row.performs_id,
+                row.occurs_in_id,
+                row.resource_relation_id,
+            )
+        }
+        assert {item.id for item in assembled.view.entities} == {
+            entity.id for entity in checked.realisation.entities
+        }
     finally:
         career = _load(CAREER)
         project_snapshot(
