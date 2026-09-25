@@ -32,10 +32,12 @@ def main() -> None:
                 strict=True
             )
             graph = session.run(
-                "MATCH (n) RETURN count(n) AS nodes, "
-                "count(CASE WHEN n:CaronProjection AND n.marker = 'active' "
+                "CYPHER 25 MATCH (n) RETURN count(n) AS nodes, "
+                "count(CASE WHEN 'CaronProjection' IN labels(n) "
+                "AND properties(n)['marker'] = 'active' "
                 "THEN 1 END) AS markers, "
-                "count(CASE WHEN n:CaronProjection OR n:CaronEntity OR n:CaronRelation "
+                "count(CASE WHEN any(label IN labels(n) WHERE label IN "
+                "['CaronProjection', 'CaronEntity', 'CaronRelation']) "
                 "THEN 1 END) AS owned"
             ).single(strict=True)
 
@@ -51,7 +53,12 @@ def main() -> None:
         or component["edition"].lower() != "community"
         or cypher["version"] != 25
     ):
-        raise SystemExit("Server differs from the frozen experiment target")
+        raise SystemExit(
+            "Server differs from the frozen experiment target "
+            "(Neo4j 2026.09.0 Community). The connection and Cypher 25 probe "
+            "succeeded; this preflight made no changes. Use the pinned "
+            "Community server for the experiment gate."
+        )
     if graph["nodes"] and (graph["markers"] != 1 or graph["owned"] != graph["nodes"]):
         raise SystemExit(
             "Database contains other data; use an isolated experiment database"

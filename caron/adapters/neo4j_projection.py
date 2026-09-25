@@ -243,9 +243,11 @@ def _write_snapshot(tx: _Transaction, plan: ProjectionPlan) -> ProjectionCounts:
     existing = _one(
         tx,
         "MATCH (n) RETURN count(n) AS nodes, "
-        "count(CASE WHEN n:CaronProjection AND n.marker = 'active' "
+        "count(CASE WHEN 'CaronProjection' IN labels(n) "
+        "AND properties(n)['marker'] = 'active' "
         "THEN 1 END) AS markers, "
-        "count(CASE WHEN n:CaronProjection OR n:CaronEntity OR n:CaronRelation "
+        "count(CASE WHEN any(label IN labels(n) WHERE label IN "
+        "['CaronProjection', 'CaronEntity', 'CaronRelation']) "
         "THEN 1 END) AS owned",
     )
     if existing["nodes"] != 0:

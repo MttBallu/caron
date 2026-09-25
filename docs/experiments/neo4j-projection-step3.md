@@ -18,6 +18,8 @@ uv run --env-file .env --group dev --extra neo4j python scripts/neo4j_projection
 
 The preflight verifies connectivity, the server version/edition, support for an explicitly selected `CYPHER 25` query, and whether the target graph is empty or already contains a Caron projection. The projector prefixes its Cypher statements with `CYPHER 25`; it does not depend on or inspect the database's default language setting. The preflight makes no writes and does not print credentials. If its target differs from the frozen input, record that deviation before running the experiment. If it reports other data, use a separate disposable database or server.
 
+An Aura instance reporting `5.27-aura enterprise` passes the connectivity and Cypher 25 probes, but does not meet the frozen `2026.09.0 Community` gate. A clean database has no Caron labels yet; the occupancy check uses label strings and dynamic property access so this expected state does not produce missing-token warnings. An Aura run could be recorded separately as an exploratory compatibility check, after explicitly choosing a disposable target and adapting the version assertion; it would not replace the Community gate.
+
 The live test **replaces the snapshot** in that database. After confirming that the target is disposable, opt in explicitly:
 
 ```bash
