@@ -12,7 +12,13 @@ from typing import Any
 
 import pytest
 
-from caron import career_ontology_v5_0
+from caron import (
+    Accepted,
+    EntityRef,
+    Qualifier,
+    career_ontology_v5_0,
+    validate_candidate,
+)
 from caron.adapters.neo4j_projection import (
     _write_snapshot,
     install_projection_constraints,
@@ -20,7 +26,13 @@ from caron.adapters.neo4j_projection import (
     project_snapshot,
 )
 from caron.adapters.neo4j_reconstruction import extract_snapshot
+from caron.adapters.neo4j_retrieval import (
+    ActivityRow,
+    LearningRow,
+    retrieve_match_rows,
+)
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
+from tests.fixtures.v5 import assertion, labelled, v5_candidate
 
 ROOT = Path(__file__).parents[2]
 GEANT4 = ROOT / "tests/fixtures/geant4-learning-and-activity-v0.1.yaml"
@@ -92,6 +104,58 @@ def test_live_projection_counts_ids_and_transaction_rollback(
             }
         )
     install_projection_constraints(driver, database=database)
+
+    # Separate frozen C01/C02 shapes: neither branch may invent the other.
+    for case_id, entities, relations, expected_learning, expected_activity in (
+        (
+            "C01",
+            (
+                labelled("p", "Person"),
+                labelled("x", "Technology"),
+                labelled("c", "Context"),
+            ),
+            (
+                assertion(
+                    "l1", "learns", "p", "x", Qualifier("context", EntityRef("c"))
+                ),
+            ),
+            (LearningRow("p", "x", "c", "l1"),),
+            (),
+        ),
+        (
+            "C02",
+            (
+                labelled("p", "Person"),
+                labelled("x", "Technology"),
+                labelled("a", "Activity"),
+                labelled("c", "Context"),
+            ),
+            (
+                assertion("p1", "performs", "p", "a"),
+                assertion("o1", "occurs_in", "a", "c"),
+                assertion("u1", "uses_technology", "a", "x"),
+            ),
+            (),
+            (ActivityRow("p", "x", "a", "c", "uses_technology", "p1", "o1", "u1"),),
+        ),
+    ):
+        checked = validate_candidate(
+            career_ontology_v5_0(),
+            v5_candidate(entities, relations, candidate_id=f"fixture:{case_id}"),
+        )
+        assert isinstance(checked, Accepted)
+        project_snapshot(driver, checked.realisation, database=database)
+        rows = retrieve_match_rows(
+            driver,
+            person_id="p",
+            target_id="x",
+            expected_realisation_id=f"fixture:{case_id}",
+            database=database,
+        )
+        assert rows.learning == expected_learning
+        assert rows.activity == expected_activity
+        assert rows.realisation_id == checked.realisation.id
+        assert rows.coverage == checked.realisation.coverage
 
     for path, expected in ((GEANT4, (7, 6)), (CAREER, (77, 113))):
         loaded = _load(path)
