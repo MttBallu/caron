@@ -1,7 +1,8 @@
 """Run with a dedicated Neo4j Community 2026.09.0 test database.
 
 Set CARON_NEO4J_EXPERIMENT_URI, USER, PASSWORD, and optionally DATABASE.
-The test replaces the database's prior Caron projection in a transaction.
+Set CARON_NEO4J_EXPERIMENT_ALLOW_WRITE=1 to opt in to replacement of an
+existing Caron projection in that database.
 """
 
 import os
@@ -30,6 +31,8 @@ def connection() -> Iterator[tuple[Any, str]]:
     uri = os.environ.get("CARON_NEO4J_EXPERIMENT_URI")
     if uri is None:
         pytest.skip("Set CARON_NEO4J_EXPERIMENT_URI for the live projection gate")
+    if os.environ.get("CARON_NEO4J_EXPERIMENT_ALLOW_WRITE") != "1":
+        pytest.skip("Set CARON_NEO4J_EXPERIMENT_ALLOW_WRITE=1 for snapshot replacement")
     neo4j = pytest.importorskip("neo4j")
     database = os.environ.get("CARON_NEO4J_EXPERIMENT_DATABASE", "neo4j")
     with neo4j.GraphDatabase.driver(
