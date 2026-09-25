@@ -14,8 +14,10 @@ import pytest
 
 from caron import (
     Accepted,
+    Entity,
     EntityRef,
     Qualifier,
+    RelationAssertion,
     career_ontology_v5_0,
     validate_candidate,
 )
@@ -56,6 +58,25 @@ def connection() -> Iterator[tuple[Any, str]]:
         ),
     ) as driver:
         driver.verify_connectivity()
+        with driver.session(database=database) as session:
+            component = session.run(
+                "CALL dbms.components() YIELD name, versions, edition "
+                "WHERE name = 'Neo4j Kernel' "
+                "RETURN versions[0] AS version, edition"
+            ).single()
+            assert component is not None
+            assert component["version"] == "2026.09.0"
+            assert component["edition"].lower() == "community"
+            cypher = session.run("CYPHER 25 RETURN 25 AS version").single()
+            assert cypher is not None
+            assert cypher["version"] == 25
+            print(
+                {
+                    "server": dict(component),
+                    "cypher": "25 (explicit)",
+                    "driver": neo4j.__version__,
+                }
+            )
         yield driver, database
 
 
@@ -80,34 +101,10 @@ def _stored_ids(driver: Any, database: str) -> tuple[set[str], set[str]]:
         return set(entities["ids"]), set(direct["ids"]) | set(qualified["ids"])
 
 
-def test_live_projection_counts_ids_and_transaction_rollback(
-    connection: tuple[Any, str],
-) -> None:
-    driver, database = connection
-    with driver.session(database=database) as session:
-        component = session.run(
-            "CALL dbms.components() YIELD name, versions, edition "
-            "WHERE name = 'Neo4j Kernel' "
-            "RETURN versions[0] AS version, edition"
-        ).single()
-        assert component is not None
-        assert component["version"] == "2026.09.0"
-        assert component["edition"].lower() == "community"
-        cypher = session.run("CYPHER 25 RETURN 25 AS version").single()
-        assert cypher is not None
-        assert cypher["version"] == 25
-        print(
-            {
-                "server": dict(component),
-                "cypher": "25 (explicit)",
-                "driver": pytest.importorskip("neo4j").__version__,
-            }
-        )
-    install_projection_constraints(driver, database=database)
-
-    # Separate frozen C01/C02 shapes: neither branch may invent the other.
-    for case_id, entities, relations, expected_learning, expected_activity in (
-        (
+@pytest.mark.parametrize(
+    ("case_id", "entities", "relations", "expected_learning", "expected_activity"),
+    [
+        pytest.param(
             "C01",
             (
                 labelled("p", "Person"),
@@ -121,8 +118,9 @@ def test_live_projection_counts_ids_and_transaction_rollback(
             ),
             (LearningRow("p", "x", "c", "l1"),),
             (),
+            id="C01_learning_without_activity",
         ),
-        (
+        pytest.param(
             "C02",
             (
                 labelled("p", "Person"),
@@ -137,13 +135,26 @@ def test_live_projection_counts_ids_and_transaction_rollback(
             ),
             (),
             (ActivityRow("p", "x", "a", "c", "uses_technology", "p1", "o1", "u1"),),
+            id="C02_activity_without_learning",
         ),
-    ):
-        checked = validate_candidate(
-            career_ontology_v5_0(),
-            v5_candidate(entities, relations, candidate_id=f"fixture:{case_id}"),
-        )
-        assert isinstance(checked, Accepted)
+    ],
+)
+def test_live_structural_case(
+    connection: tuple[Any, str],
+    case_id: str,
+    entities: tuple[Entity, ...],
+    relations: tuple[RelationAssertion, ...],
+    expected_learning: tuple[LearningRow, ...],
+    expected_activity: tuple[ActivityRow, ...],
+) -> None:
+    driver, database = connection
+    install_projection_constraints(driver, database=database)
+    checked = validate_candidate(
+        career_ontology_v5_0(),
+        v5_candidate(entities, relations, candidate_id=f"fixture:{case_id}"),
+    )
+    assert isinstance(checked, Accepted)
+    try:
         project_snapshot(driver, checked.realisation, database=database)
         rows = retrieve_match_rows(
             driver,
@@ -156,6 +167,21 @@ def test_live_projection_counts_ids_and_transaction_rollback(
         assert rows.activity == expected_activity
         assert rows.realisation_id == checked.realisation.id
         assert rows.coverage == checked.realisation.coverage
+    finally:
+        career = _load(CAREER)
+        project_snapshot(
+            driver,
+            career.realisation,
+            database=database,
+            source_state_id=career.source_state_id,
+        )
+
+
+def test_live_projection_counts_ids_and_transaction_rollback(
+    connection: tuple[Any, str],
+) -> None:
+    driver, database = connection
+    install_projection_constraints(driver, database=database)
 
     for path, expected in ((GEANT4, (7, 6)), (CAREER, (77, 113))):
         loaded = _load(path)
