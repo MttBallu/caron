@@ -225,7 +225,7 @@ def prepare_snapshot(
 
 
 def _one(tx: _Transaction, query: str, **parameters: object) -> Mapping[str, object]:
-    result = tx.run(query, **parameters).single()
+    result = tx.run("CYPHER 25 " + query, **parameters).single()
     if result is None:
         raise ProjectionError("Neo4j returned no summary for a projection operation")
     return result
@@ -378,4 +378,4 @@ def install_projection_constraints(driver: _Driver, *, database: str = "neo4j") 
     """
     with driver.session(database=database) as session:
         for statement in _UNIQUENESS_CONSTRAINTS:
-            session.run(statement).consume()
+            session.run("CYPHER 25 " + statement).consume()

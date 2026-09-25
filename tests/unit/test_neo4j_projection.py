@@ -173,6 +173,9 @@ def test_failed_replacement_keeps_previous_snapshot() -> None:
     driver = _FakeDriver(counts.nodes, counts.relationships)
     assert project_snapshot(driver, graph) == counts  # type: ignore[arg-type]
     assert driver.commits == 1 and driver.saved_nodes == 7
+    assert driver.queries and all(
+        query.startswith("CYPHER 25 ") for query in driver.queries
+    )
     assert project_snapshot(driver, graph) == counts  # type: ignore[arg-type]
     assert any("DETACH DELETE" in query for query in driver.queries)
     driver.fail_on = "CARON_Q_CONTEXT"

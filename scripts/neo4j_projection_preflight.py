@@ -28,10 +28,9 @@ def main() -> None:
                 "WHERE name = 'Neo4j Kernel' "
                 "RETURN versions[0] AS version, edition"
             ).single(strict=True)
-            setting = session.run(
-                "SHOW SETTINGS YIELD name, value "
-                "WHERE name = 'db.query.default_language' RETURN value"
-            ).single(strict=True)
+            cypher = session.run("CYPHER 25 RETURN 25 AS version").single(
+                strict=True
+            )
             graph = session.run(
                 "MATCH (n) RETURN count(n) AS nodes, "
                 "count(CASE WHEN n:CaronProjection AND n.marker = 'active' "
@@ -42,7 +41,7 @@ def main() -> None:
 
     print(f"Database: {database}")
     print(f"Server: {component['version']} {component['edition']}")
-    print(f"Default language: {setting['value']}")
+    print("Cypher language: 25 (selected explicitly by the projector)")
     print(
         f"Existing nodes: {graph['nodes']}; "
         f"Caron projection markers: {graph['markers']}"
@@ -50,7 +49,7 @@ def main() -> None:
     if (
         component["version"] != "2026.09.0"
         or component["edition"].lower() != "community"
-        or setting["value"] != "CYPHER_25"
+        or cypher["version"] != 25
     ):
         raise SystemExit("Server differs from the frozen experiment target")
     if graph["nodes"] and (graph["markers"] != 1 or graph["owned"] != graph["nodes"]):

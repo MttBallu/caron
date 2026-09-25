@@ -16,7 +16,7 @@ uv sync --group dev --extra neo4j
 uv run --env-file .env --group dev --extra neo4j python scripts/neo4j_projection_preflight.py
 ```
 
-The preflight verifies connectivity, the server version/edition, the default Cypher language, and whether the target graph is empty or already contains a Caron projection. It makes no writes and does not print credentials. If its target differs from the frozen input, record that deviation before running the experiment. If it reports other data, use a separate disposable database or server.
+The preflight verifies connectivity, the server version/edition, support for an explicitly selected `CYPHER 25` query, and whether the target graph is empty or already contains a Caron projection. The projector prefixes its Cypher statements with `CYPHER 25`; it does not depend on or inspect the database's default language setting. The preflight makes no writes and does not print credentials. If its target differs from the frozen input, record that deviation before running the experiment. If it reports other data, use a separate disposable database or server.
 
 The live test **replaces the snapshot** in that database. After confirming that the target is disposable, opt in explicitly:
 

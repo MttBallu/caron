@@ -80,16 +80,13 @@ def test_live_projection_counts_ids_and_transaction_rollback(
         assert component is not None
         assert component["version"] == "2026.09.0"
         assert component["edition"].lower() == "community"
-        setting = session.run(
-            "SHOW SETTINGS YIELD name, value "
-            "WHERE name = 'db.query.default_language' RETURN value"
-        ).single()
-        assert setting is not None
-        assert setting["value"] == "CYPHER_25"
+        cypher = session.run("CYPHER 25 RETURN 25 AS version").single()
+        assert cypher is not None
+        assert cypher["version"] == 25
         print(
             {
                 "server": dict(component),
-                "cypher_default": setting["value"],
+                "cypher": "25 (explicit)",
                 "driver": pytest.importorskip("neo4j").__version__,
             }
         )
