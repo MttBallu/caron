@@ -19,6 +19,7 @@ from caron.adapters.neo4j_projection import (
     prepare_snapshot,
     project_snapshot,
 )
+from caron.adapters.neo4j_reconstruction import extract_snapshot
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
 
 ROOT = Path(__file__).parents[2]
@@ -119,8 +120,39 @@ def test_live_projection_counts_ids_and_transaction_rollback(
             {item.id for item in loaded.realisation.entities},
             {item.id for item in loaded.realisation.relations},
         )
+        extracted = extract_snapshot(driver, database=database)
+        assert extracted.source_state_id == loaded.source_state_id
+        assert extracted.candidate.id == loaded.realisation.id
+        assert extracted.candidate.coverage == loaded.realisation.coverage
+        source_entities = {item.id: item for item in loaded.realisation.entities}
+        restored_entities = {item.id: item for item in extracted.validated.entities}
+        assert source_entities.keys() == restored_entities.keys()
+        for entity_id, source in source_entities.items():
+            restored = restored_entities[entity_id]
+            assert restored.kind == source.kind
+            assert {p.name: p.value for p in restored.properties} == {
+                p.name: p.value for p in source.properties
+            }
+        source_relations = {item.id: item for item in loaded.realisation.relations}
+        restored_relations = {item.id: item for item in extracted.validated.relations}
+        assert source_relations.keys() == restored_relations.keys()
+        for relation_id, source_relation in source_relations.items():
+            restored_relation = restored_relations[relation_id]
+            assert (
+                restored_relation.kind,
+                restored_relation.source,
+                restored_relation.target,
+            ) == (
+                source_relation.kind,
+                source_relation.source,
+                source_relation.target,
+            )
+            assert {q.name: q.value for q in restored_relation.qualifiers} == {
+                q.name: q.value for q in source_relation.qualifiers
+            }
 
     original_ids = _stored_ids(driver, database)
+    original_snapshot = extract_snapshot(driver, database=database)
     plan = prepare_snapshot(_load(GEANT4).realisation)
 
     class FaultAfterDeletion:
@@ -138,3 +170,4 @@ def test_live_projection_counts_ids_and_transaction_rollback(
     ):
         session.execute_write(lambda tx: _write_snapshot(FaultAfterDeletion(tx), plan))
     assert _stored_ids(driver, database) == original_ids
+    assert extract_snapshot(driver, database=database) == original_snapshot
