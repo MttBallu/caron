@@ -6,6 +6,9 @@ readme = "career-ontology-package-skeleton.md"
 requires-python = ">=3.12"
 dependencies = ["PyYAML>=6.0"]
 
+[project.optional-dependencies]
+neo4j = ["neo4j>=6,<7"]
+
 [dependency-groups]
 dev = [
     "hypothesis",
