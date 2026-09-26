@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from caron.adapters.neo4j_results import (
+from caron._m2a import (
     ActivityResourceMatch,
     LearningMatch,
     Match,
