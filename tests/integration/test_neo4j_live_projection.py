@@ -19,6 +19,14 @@ from caron import (
     career_ontology_v5_0,
     validate_candidate,
 )
+from caron._m2a import (
+    ActivityResourceMatch,
+    LearningMatch,
+    MatchesAccepted,
+    MatchesRejected,
+    Request,
+    evaluate_matches,
+)
 from caron.adapters.neo4j_projection import (
     _write_snapshot,
     install_projection_constraints,
@@ -26,12 +34,7 @@ from caron.adapters.neo4j_projection import (
     project_snapshot,
 )
 from caron.adapters.neo4j_reconstruction import extract_snapshot
-from caron.adapters.neo4j_results import (
-    ActivityResourceMatch,
-    LearningMatch,
-    Request,
-    evaluate_projected_matches,
-)
+from caron.adapters.neo4j_results import evaluate_projected_matches
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
 from tests.fixtures.neo4j_career import PERSON, PROBES, source_matches, source_view_ids
 from tests.fixtures.neo4j_m2a import CASES, Case
@@ -132,6 +135,13 @@ def test_live_m2a_case(connection: tuple[Any, str], case: Case) -> None:
         assert set(result.matches) == set(case.expected)
         assert result.view is not None
         assert result.view.results == result.matches
+        reference = evaluate_matches(checked.realisation, Request("p", "x"))
+        semantic = result.semantic_outcome()
+        assert isinstance(reference, MatchesAccepted)
+        assert isinstance(semantic, MatchesAccepted)
+        assert set(semantic.matches) == set(reference.matches)
+        assert semantic.view.entities == reference.view.entities
+        assert semantic.view.relations == reference.view.relations
         assert result.view.coverage == checked.realisation.coverage
         assert {item.id for item in result.view.entities} == case.view_entities
         assert {item.id for item in result.view.relations} == case.view_relations
@@ -192,6 +202,11 @@ def test_live_m2a_request_diagnostic(
         assert tuple(item.code for item in result.diagnostics) == (code,)
         assert result.coverage == checked.realisation.coverage
         assert result.request == Request(person_id, target_id)
+        reference = evaluate_matches(
+            checked.realisation, Request(person_id, target_id)
+        )
+        assert isinstance(reference, MatchesRejected)
+        assert result.semantic_outcome() == reference
     finally:
         career = _load(CAREER)
         project_snapshot(
@@ -272,6 +287,13 @@ def test_live_whole_career_m2a_queries(connection: tuple[Any, str]) -> None:
         } == probe.resource_ids
         assert result.view is not None
         assert result.view.results == result.matches
+        reference = evaluate_matches(source, Request(PERSON, probe.target_id))
+        semantic = result.semantic_outcome()
+        assert isinstance(reference, MatchesAccepted)
+        assert isinstance(semantic, MatchesAccepted)
+        assert set(semantic.matches) == set(reference.matches)
+        assert semantic.view.entities == reference.view.entities
+        assert semantic.view.relations == reference.view.relations
         assert result.view.source_realisation_id == source.id
         assert result.view.coverage == source.coverage
         expected_entity_ids, relation_ids = source_view_ids(source, expected)
