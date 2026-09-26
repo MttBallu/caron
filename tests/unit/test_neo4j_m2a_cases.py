@@ -3,6 +3,7 @@
 import pytest
 
 from caron import Accepted, career_ontology_v5_0, validate_candidate
+from caron._m2a import ActivityResourceMatch, LearningMatch, Match
 from caron._query_algebra import (
     EntityConstant,
     EntityValue,
@@ -13,7 +14,6 @@ from caron._query_algebra import (
     Variable,
     evaluate_plan,
 )
-from caron.adapters.neo4j_results import ActivityResourceMatch, LearningMatch, Match
 from caron.entities import EntityRef
 from tests.fixtures.neo4j_m2a import CASES, Case
 from tests.fixtures.v5 import v5_candidate
