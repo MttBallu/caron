@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from caron import career_ontology_v5_0
-from caron.adapters.neo4j_results import ActivityResourceMatch, LearningMatch
+from caron._m2a import ActivityResourceMatch, LearningMatch
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
 from tests.fixtures.neo4j_career import PROBES, CareerProbe, source_matches
 
