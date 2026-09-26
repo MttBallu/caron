@@ -14,7 +14,7 @@ from caron import (
     RelationAssertion,
     TemporalExtent,
 )
-from caron.adapters.neo4j_results import ActivityResourceMatch, LearningMatch, Match
+from caron._m2a import ActivityResourceMatch, LearningMatch, Match
 from tests.fixtures.v5 import assertion, labelled
 
 
