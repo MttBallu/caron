@@ -6,49 +6,25 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol, Self
 
+from caron._m2a import (
+    _RESOURCE_KINDS,
+    ActivityResourceMatch,
+    LearningMatch,
+    Match,
+    MatchesAccepted,
+    MatchesRejected,
+    Request,
+    RequestDiagnostic,
+    build_view,
+    request_diagnostics,
+)
 from caron.adapters.neo4j_projection import ProjectionError
 from caron.adapters.neo4j_reconstruction import ReconstructedSnapshot, _extract
-from caron.adapters.neo4j_retrieval import _RESOURCE_KINDS, RetrievalRows, _read
-from caron.entities import Entity, EntityRef
-from caron.ontology import career_ontology_v5_0
+from caron.adapters.neo4j_retrieval import RetrievalRows, _read
+from caron.entities import EntityRef
 from caron.realisations import Coverage, ValidatedRealisation
 from caron.relations import RelationAssertion
-from caron.views import GraphView, QueryBinding
-
-
-@dataclass(frozen=True, slots=True)
-class Request:
-    person_id: str
-    target_id: str
-
-
-@dataclass(frozen=True, slots=True)
-class RequestDiagnostic:
-    code: str
-    entity_id: str
-
-
-@dataclass(frozen=True, slots=True)
-class LearningMatch:
-    person: EntityRef
-    target: EntityRef
-    context: EntityRef
-    learns: str
-
-
-@dataclass(frozen=True, slots=True)
-class ActivityResourceMatch:
-    person: EntityRef
-    activity: EntityRef
-    target: EntityRef
-    local_context: EntityRef
-    resource_kind: str
-    performs: str
-    occurs_in: str
-    resource_relation: str
-
-
-type Match = LearningMatch | ActivityResourceMatch
+from caron.views import GraphView
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,28 +39,19 @@ class AssembledResult:
     view: GraphView[Match] | None
     diagnostics: tuple[RequestDiagnostic, ...] = ()
 
-
-def _request_diagnostics(
-    source: ValidatedRealisation, request: Request
-) -> tuple[RequestDiagnostic, ...]:
-    ontology = career_ontology_v5_0()
-    if (source.ontology.id, source.ontology.version) != (
-        ontology.id,
-        ontology.version,
-    ):
-        return (RequestDiagnostic("query.unsupported_ontology", source.ontology.id),)
-    person = source.entity(request.person_id)
-    target = source.entity(request.target_id)
-    errors = []
-    if person is None:
-        errors.append(RequestDiagnostic("query.unknown_person", request.person_id))
-    elif person.kind != "Person":
-        errors.append(RequestDiagnostic("query.invalid_person_kind", request.person_id))
-    if target is None:
-        errors.append(RequestDiagnostic("query.unknown_target", request.target_id))
-    elif target.kind not in {"Technology", "Language", "Method", "Subject"}:
-        errors.append(RequestDiagnostic("query.invalid_target_kind", request.target_id))
-    return tuple(errors)
+    def semantic_outcome(self) -> MatchesAccepted | MatchesRejected:
+        """Discard projection metadata and expose the draft semantic outcome."""
+        identity = (
+            self.request,
+            self.source_realisation_id,
+            self.ontology_id,
+            self.ontology_version,
+        )
+        if self.diagnostics:
+            return MatchesRejected(*identity, self.diagnostics)
+        if self.view is None:
+            raise ProjectionError("Successful retrieval has no graph view")
+        return MatchesAccepted(*identity, self.coverage, self.matches, self.view)
 
 
 def _support(
@@ -114,7 +81,7 @@ def assemble_result(
 ) -> AssembledResult:
     """Assemble selected source records without creating inferred assertions."""
     source = snapshot.validated
-    diagnostics = _request_diagnostics(source, request)
+    diagnostics = request_diagnostics(source, request)
     base = (
         request,
         source.id,
@@ -137,23 +104,6 @@ def assemble_result(
         raise ProjectionError("Retrieval and reconstructed snapshot disagree")
 
     matches: list[Match] = []
-    selected_relations: dict[str, RelationAssertion] = {}
-    selected_entities: dict[str, Entity] = {}
-
-    def select_entity(entity_id: str) -> None:
-        entity = source.entity(entity_id)
-        if entity is None:
-            raise ProjectionError(f"Match refers to missing entity {entity_id!r}")
-        selected_entities[entity_id] = entity
-
-    def select_relation(relation: RelationAssertion) -> None:
-        selected_relations[relation.id] = relation
-        select_entity(relation.source.entity_id)
-        select_entity(relation.target.entity_id)
-        for qualifier in relation.qualifiers:
-            if isinstance(qualifier.value, EntityRef):
-                select_entity(qualifier.value.entity_id)
-
     for row in rows.learning:
         if (row.person_id, row.target_id) != (request.person_id, request.target_id):
             raise ProjectionError("Learning match changed request bindings")
@@ -162,7 +112,6 @@ def assemble_result(
         )
         if relation.qualifier("context") != EntityRef(row.context_id):
             raise ProjectionError("Learning match context disagrees with support")
-        select_relation(relation)
         matches.append(
             LearningMatch(
                 EntityRef(row.person_id),
@@ -201,7 +150,7 @@ def assemble_result(
                 activity_row.target_id,
             ),
         ):
-            select_relation(_support(source, relation_id, kind, start, end))
+            _support(source, relation_id, kind, start, end)
         matches.append(
             ActivityResourceMatch(
                 EntityRef(activity_row.person_id),
@@ -216,36 +165,8 @@ def assemble_result(
         )
     if len(set(matches)) != len(matches):
         raise ProjectionError("Duplicate complete matches in retrieval rows")
-    # Entity properties can also refer to entities outside the selected relations.
-    pending = list(selected_entities.values())
-    while pending:
-        entity = pending.pop()
-        for prop in entity.properties:
-            if (
-                isinstance(prop.value, EntityRef)
-                and prop.value.entity_id not in selected_entities
-            ):
-                select_entity(prop.value.entity_id)
-                pending.append(selected_entities[prop.value.entity_id])
-
     selected = tuple(matches)
-    view = GraphView(
-        query_name="ReusableEntityMatches",
-        source_realisation_id=source.id,
-        ontology=source.ontology,
-        entities=tuple(sorted(selected_entities.values(), key=lambda item: item.id)),
-        relations=tuple(sorted(selected_relations.values(), key=lambda item: item.id)),
-        bindings=(
-            (
-                QueryBinding("person", EntityRef(request.person_id)),
-                QueryBinding("target", EntityRef(request.target_id)),
-            )
-            if selected
-            else ()
-        ),
-        results=selected,
-        coverage=source.coverage,
-    )
+    view = build_view(source, request, selected)
     return AssembledResult(*base, selected, view)
 
 
@@ -290,7 +211,7 @@ def evaluate_projected_matches(
             raise ProjectionError(
                 "Projected snapshot does not match the requested source"
             )
-        if _request_diagnostics(snapshot.validated, request):
+        if request_diagnostics(snapshot.validated, request):
             return assemble_result(snapshot, request, None)
         rows = _read(
             tx,
