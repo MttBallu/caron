@@ -10,16 +10,10 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Protocol, Self
 
+from caron._m2a import _RESOURCE_KINDS
 from caron.adapters.neo4j_projection import PROFILE_VERSION, ProjectionError
 from caron.ontology import career_ontology_v5_0
 from caron.realisations import Coverage, CoverageStatus
-
-_RESOURCE_KINDS = {
-    "Technology": ("uses_technology",),
-    "Language": ("uses_language",),
-    "Method": ("applies", "draws_on"),
-    "Subject": ("draws_on",),
-}
 
 _LEARNING = """CYPHER 25
 MATCH (person:CaronEntity:Person {id: $person_id})
@@ -195,7 +189,7 @@ def _read(
 
     activities = []
     for row in tx.run(
-        _ACTIVITY, **params, resource_kinds=list(_RESOURCE_KINDS[target_kind])
+        _ACTIVITY, **params, resource_kinds=sorted(_RESOURCE_KINDS[target_kind])
     ).data():
         fields = _string_fields(
             row,
