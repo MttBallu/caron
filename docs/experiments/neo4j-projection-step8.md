@@ -21,4 +21,17 @@ Against the dedicated disposable Community `2026.09.0` container, after pulling 
 CARON_NEO4J_EXPERIMENT_ALLOW_WRITE=1 uv run --env-file .env --group dev --extra neo4j pytest -v -s tests/integration/test_neo4j_live_projection.py -k whole_career_m2a_queries
 ```
 
-The local unit gate passes. The live gate and measured timings await this run. Record the executed Neo4j image digest and actual repository commit in the final report if available.
+## Reported live run, 2026-09-26
+
+The user reports that the focused live test **passed** on Neo4j Community `2026.09.0` with explicit Cypher 25 and Python driver `6.3.1`. The fixture source-state ID was `13cbe70f70bb4d825c1f4a88984478fe973ed8a93464948cee212943636ce522`. The test compared the reconstructed records and each match, support and view with the validated source. The resulting measurements were:
+
+| Operation / target | Matches | View entities | View assertions | Wall time (s) |
+| --- | ---: | ---: | ---: | ---: |
+| Snapshot load | — | — | — | 0.585975 |
+| Full reconstruction | — | — | — | 0.065969 |
+| `technology:geant4` | 3 | 7 | 7 | 0.368236 |
+| `method:monte-carlo-transport` | 1 | 4 | 3 | 0.170913 |
+| `language:english` | 1 | 4 | 3 | 0.032550 |
+| `technology:python` | 8 | 18 | 24 | 0.050195 |
+
+This is one run with mixed query order and possible warm-up effects. The timings characterize this particular whole-snapshot adapter path; they do not establish comparative performance or a throughput target. The executed image digest and local repository commit were not captured in the reported output. **Step 8's live gate passed.**
