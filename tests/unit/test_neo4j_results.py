@@ -1,7 +1,10 @@
 """The proposed result keeps source witnesses and successful empty coverage."""
 
+from dataclasses import replace
+
 import pytest
 
+from caron import Accepted, career_ontology_v5_0, validate_candidate
 from caron.adapters.neo4j_projection import ProjectionError
 from caron.adapters.neo4j_reconstruction import ReconstructedSnapshot
 from caron.adapters.neo4j_results import (
@@ -123,8 +126,6 @@ def test_empty_and_rejected_requests_keep_request_source_and_coverage() -> None:
 
 
 def test_assembly_rejects_inconsistent_witnesses_or_snapshot_metadata() -> None:
-    from dataclasses import replace
-
     snapshot = _snapshot()
     rows = _rows(snapshot)
     with pytest.raises(ProjectionError, match="snapshot disagree"):
@@ -138,3 +139,17 @@ def test_assembly_rejects_inconsistent_witnesses_or_snapshot_metadata() -> None:
     )
     with pytest.raises(ProjectionError, match="context disagrees"):
         assemble_result(snapshot, Request("matteo", "geant4"), altered)
+
+
+def test_draft_rejects_a_validated_source_of_another_ontology_version() -> None:
+    snapshot = _snapshot()
+    other_ontology = replace(career_ontology_v5_0(), version="5.1")
+    candidate = replace(snapshot.candidate, ontology_version="5.1")
+    checked = validate_candidate(other_ontology, candidate)
+    assert isinstance(checked, Accepted)
+    other = ReconstructedSnapshot(candidate, checked.realisation, None)
+    result = assemble_result(other, Request("matteo", "geant4"), None)
+    assert result.matches == () and result.view is None
+    assert tuple(item.code for item in result.diagnostics) == (
+        "query.unsupported_ontology",
+    )

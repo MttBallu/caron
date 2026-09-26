@@ -14,10 +14,6 @@ import pytest
 
 from caron import (
     Accepted,
-    Entity,
-    EntityRef,
-    Qualifier,
-    RelationAssertion,
     career_ontology_v5_0,
     validate_candidate,
 )
@@ -29,13 +25,9 @@ from caron.adapters.neo4j_projection import (
 )
 from caron.adapters.neo4j_reconstruction import extract_snapshot
 from caron.adapters.neo4j_results import Request, evaluate_projected_matches
-from caron.adapters.neo4j_retrieval import (
-    ActivityRow,
-    LearningRow,
-    retrieve_match_rows,
-)
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
-from tests.fixtures.v5 import assertion, labelled, v5_candidate
+from tests.fixtures.neo4j_m2a import CASES, Case
+from tests.fixtures.v5 import labelled, v5_candidate
 
 ROOT = Path(__file__).parents[2]
 GEANT4 = ROOT / "tests/fixtures/geant4-learning-and-activity-v0.1.yaml"
@@ -102,95 +94,96 @@ def _stored_ids(driver: Any, database: str) -> tuple[set[str], set[str]]:
         return set(entities["ids"]), set(direct["ids"]) | set(qualified["ids"])
 
 
-@pytest.mark.parametrize(
-    ("case_id", "entities", "relations", "expected_learning", "expected_activity"),
-    [
-        pytest.param(
-            "C01",
-            (
-                labelled("p", "Person"),
-                labelled("x", "Technology"),
-                labelled("c", "Context"),
-            ),
-            (
-                assertion(
-                    "l1", "learns", "p", "x", Qualifier("context", EntityRef("c"))
-                ),
-            ),
-            (LearningRow("p", "x", "c", "l1"),),
-            (),
-            id="C01_learning_without_activity",
-        ),
-        pytest.param(
-            "C02",
-            (
-                labelled("p", "Person"),
-                labelled("x", "Technology"),
-                labelled("a", "Activity"),
-                labelled("c", "Context"),
-            ),
-            (
-                assertion("p1", "performs", "p", "a"),
-                assertion("o1", "occurs_in", "a", "c"),
-                assertion("u1", "uses_technology", "a", "x"),
-            ),
-            (),
-            (ActivityRow("p", "x", "a", "c", "uses_technology", "p1", "o1", "u1"),),
-            id="C02_activity_without_learning",
-        ),
-    ],
-)
-def test_live_structural_case(
-    connection: tuple[Any, str],
-    case_id: str,
-    entities: tuple[Entity, ...],
-    relations: tuple[RelationAssertion, ...],
-    expected_learning: tuple[LearningRow, ...],
-    expected_activity: tuple[ActivityRow, ...],
-) -> None:
+@pytest.mark.parametrize("case", CASES, ids=lambda case: case.id)
+def test_live_m2a_case(connection: tuple[Any, str], case: Case) -> None:
     driver, database = connection
     install_projection_constraints(driver, database=database)
     checked = validate_candidate(
         career_ontology_v5_0(),
-        v5_candidate(entities, relations, candidate_id=f"fixture:{case_id}"),
+        v5_candidate(
+            case.entities,
+            case.relations,
+            candidate_id=f"fixture:{case.id}",
+            scope="fixture_career",
+        ),
     )
-    assert isinstance(checked, Accepted)
+    assert isinstance(checked, Accepted), checked
     try:
         project_snapshot(driver, checked.realisation, database=database)
-        rows = retrieve_match_rows(
-            driver,
-            person_id="p",
-            target_id="x",
-            expected_realisation_id=f"fixture:{case_id}",
-            database=database,
-        )
-        assert rows.learning == expected_learning
-        assert rows.activity == expected_activity
-        assert rows.realisation_id == checked.realisation.id
-        assert rows.coverage == checked.realisation.coverage
-        assembled = evaluate_projected_matches(
+        result = evaluate_projected_matches(
             driver,
             request=Request("p", "x"),
             expected_realisation_id=checked.realisation.id,
             database=database,
         )
-        assert assembled.diagnostics == ()
-        assert assembled.view is not None
-        assert len(assembled.matches) == len(expected_learning) + len(expected_activity)
-        assert {item.id for item in assembled.view.relations} == {
-            row.learns_id for row in expected_learning
-        } | {
-            relation_id
-            for row in expected_activity
-            for relation_id in (
-                row.performs_id,
-                row.occurs_in_id,
-                row.resource_relation_id,
-            )
-        }
-        assert {item.id for item in assembled.view.entities} == {
-            entity.id for entity in checked.realisation.entities
-        }
+        assert result.diagnostics == ()
+        assert result.request == Request("p", "x")
+        assert result.source_realisation_id == checked.realisation.id
+        assert result.coverage == checked.realisation.coverage
+        assert len(result.matches) == len(case.expected)
+        assert set(result.matches) == set(case.expected)
+        assert result.view is not None
+        assert result.view.results == result.matches
+        assert result.view.coverage == checked.realisation.coverage
+        assert {item.id for item in result.view.entities} == case.view_entities
+        assert {item.id for item in result.view.relations} == case.view_relations
+        source_entities = {item.id: item for item in checked.realisation.entities}
+        source_relations = {item.id: item for item in checked.realisation.relations}
+        for entity in result.view.entities:
+            assert entity == source_entities[entity.id]
+        for relation in result.view.relations:
+            assert relation == source_relations[relation.id]
+    finally:
+        career = _load(CAREER)
+        project_snapshot(
+            driver,
+            career.realisation,
+            database=database,
+            source_state_id=career.source_state_id,
+        )
+
+
+@pytest.mark.parametrize(
+    ("person_id", "target_id", "code"),
+    [
+        ("missing", "x", "query.unknown_person"),
+        ("x", "x", "query.invalid_person_kind"),
+        ("p", "missing", "query.unknown_target"),
+        ("p", "p", "query.invalid_target_kind"),
+        ("p", "artifact", "query.invalid_target_kind"),
+    ],
+)
+def test_live_m2a_request_diagnostic(
+    connection: tuple[Any, str],
+    person_id: str,
+    target_id: str,
+    code: str,
+) -> None:
+    driver, database = connection
+    case = next(item for item in CASES if item.id == "C08_empty_selective_realisation")
+    checked = validate_candidate(
+        career_ontology_v5_0(),
+        v5_candidate(
+            (*case.entities, labelled("artifact", "Artifact")),
+            case.relations,
+            candidate_id="fixture:C08",
+            scope="fixture_career",
+        ),
+    )
+    assert isinstance(checked, Accepted), checked
+    install_projection_constraints(driver, database=database)
+    try:
+        project_snapshot(driver, checked.realisation, database=database)
+        result = evaluate_projected_matches(
+            driver,
+            request=Request(person_id, target_id),
+            expected_realisation_id=checked.realisation.id,
+            database=database,
+        )
+        assert result.matches == () and result.view is None
+        assert tuple(item.code for item in result.diagnostics) == (code,)
+        assert result.coverage == checked.realisation.coverage
+        assert result.request == Request(person_id, target_id)
     finally:
         career = _load(CAREER)
         project_snapshot(
