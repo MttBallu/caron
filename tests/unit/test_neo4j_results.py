@@ -5,14 +5,16 @@ from dataclasses import replace
 import pytest
 
 from caron import Accepted, career_ontology_v5_0, validate_candidate
-from caron.adapters.neo4j_projection import ProjectionError
-from caron.adapters.neo4j_reconstruction import ReconstructedSnapshot
-from caron.adapters.neo4j_results import (
+from caron._m2a import (
     ActivityResourceMatch,
     LearningMatch,
+    MatchesAccepted,
     Request,
-    assemble_result,
+    evaluate_matches,
 )
+from caron.adapters.neo4j_projection import ProjectionError
+from caron.adapters.neo4j_reconstruction import ReconstructedSnapshot
+from caron.adapters.neo4j_results import assemble_result
 from caron.adapters.neo4j_retrieval import ActivityRow, LearningRow, RetrievalRows
 from caron.realisations import RealisationCandidate
 from tests.fixtures.query_algebra import validated_query_algebra_fixture
@@ -91,6 +93,13 @@ def test_assembly_keeps_individual_supports_and_reference_closed_view() -> None:
         "person",
         "target",
     )
+    semantic = result.semantic_outcome()
+    reference = evaluate_matches(snapshot.validated, Request("matteo", "geant4"))
+    assert isinstance(semantic, MatchesAccepted)
+    assert isinstance(reference, MatchesAccepted)
+    assert set(semantic.matches) == set(reference.matches)
+    assert semantic.view.entities == reference.view.entities
+    assert semantic.view.relations == reference.view.relations
 
 
 def test_empty_and_rejected_requests_keep_request_source_and_coverage() -> None:
@@ -123,6 +132,7 @@ def test_empty_and_rejected_requests_keep_request_source_and_coverage() -> None:
         assert rejected.coverage == source.coverage
         assert rejected.view is None and rejected.matches == ()
         assert rejected.diagnostics[0].code == code
+        assert rejected.semantic_outcome() == evaluate_matches(source, request)
 
 
 def test_assembly_rejects_inconsistent_witnesses_or_snapshot_metadata() -> None:
