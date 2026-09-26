@@ -8,12 +8,14 @@ existing Caron projection in that database.
 import os
 from collections.abc import Iterator
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 import pytest
 
 from caron import (
     Accepted,
+    EntityRef,
     career_ontology_v5_0,
     validate_candidate,
 )
@@ -24,8 +26,14 @@ from caron.adapters.neo4j_projection import (
     project_snapshot,
 )
 from caron.adapters.neo4j_reconstruction import extract_snapshot
-from caron.adapters.neo4j_results import Request, evaluate_projected_matches
+from caron.adapters.neo4j_results import (
+    ActivityResourceMatch,
+    LearningMatch,
+    Request,
+    evaluate_projected_matches,
+)
 from caron.yaml_reader import LoadAccepted, load_realisation_yaml
+from tests.fixtures.neo4j_career import PERSON, PROBES, source_matches, source_view_ids
 from tests.fixtures.neo4j_m2a import CASES, Case
 from tests.fixtures.v5 import labelled, v5_candidate
 
@@ -192,6 +200,136 @@ def test_live_m2a_request_diagnostic(
             database=database,
             source_state_id=career.source_state_id,
         )
+
+
+def test_live_whole_career_m2a_queries(connection: tuple[Any, str]) -> None:
+    driver, database = connection
+    loaded = _load(CAREER)
+    source = loaded.realisation
+    install_projection_constraints(driver, database=database)
+    start = perf_counter()
+    counts = project_snapshot(
+        driver, source, database=database, source_state_id=loaded.source_state_id
+    )
+    load_seconds = perf_counter() - start
+    assert (counts.nodes, counts.relationships) == (77, 113)
+    start = perf_counter()
+    reconstructed = extract_snapshot(driver, database=database)
+    reconstruction_seconds = perf_counter() - start
+    assert reconstructed.source_state_id == loaded.source_state_id
+    assert reconstructed.candidate.id == source.id
+    assert reconstructed.validated.coverage == source.coverage
+    assert {
+        item.id: (item.kind, {p.name: p.value for p in item.properties})
+        for item in reconstructed.validated.entities
+    } == {
+        item.id: (item.kind, {p.name: p.value for p in item.properties})
+        for item in source.entities
+    }
+    assert {
+        item.id: (
+            item.kind,
+            item.source,
+            item.target,
+            {q.name: q.value for q in item.qualifiers},
+        )
+        for item in reconstructed.validated.relations
+    } == {
+        item.id: (
+            item.kind,
+            item.source,
+            item.target,
+            {q.name: q.value for q in item.qualifiers},
+        )
+        for item in source.relations
+    }
+
+    for probe in PROBES:
+        start = perf_counter()
+        result = evaluate_projected_matches(
+            driver,
+            request=Request(PERSON, probe.target_id),
+            expected_realisation_id=source.id,
+            expected_source_state_id=loaded.source_state_id,
+            database=database,
+        )
+        query_seconds = perf_counter() - start
+        expected = source_matches(source, probe.target_id)
+        assert result.diagnostics == ()
+        assert result.request == Request(PERSON, probe.target_id)
+        assert result.source_realisation_id == source.id
+        assert result.source_state_id == loaded.source_state_id
+        assert result.coverage == source.coverage
+        assert len(result.matches) == len(expected)
+        assert set(result.matches) == set(expected)
+        assert {
+            item.learns for item in result.matches if isinstance(item, LearningMatch)
+        } == probe.learning_ids
+        assert {
+            item.resource_relation
+            for item in result.matches
+            if isinstance(item, ActivityResourceMatch)
+        } == probe.resource_ids
+        assert result.view is not None
+        assert result.view.results == result.matches
+        assert result.view.source_realisation_id == source.id
+        assert result.view.coverage == source.coverage
+        expected_entity_ids, relation_ids = source_view_ids(source, expected)
+        assert {item.id for item in result.view.relations} == relation_ids
+        for item in result.view.relations:
+            original = source.relation(item.id)
+            assert original is not None
+            assert (item.kind, item.source, item.target) == (
+                original.kind,
+                original.source,
+                original.target,
+            )
+            assert {q.name: q.value for q in item.qualifiers} == {
+                q.name: q.value for q in original.qualifiers
+            }
+        entity_ids = {item.id for item in result.view.entities}
+        assert entity_ids == expected_entity_ids
+        assert tuple(binding.name for binding in result.view.bindings) == (
+            "person",
+            "target",
+        )
+        for relation in result.view.relations:
+            assert relation.source.entity_id in entity_ids
+            assert relation.target.entity_id in entity_ids
+            assert all(
+                qualifier.value.entity_id in entity_ids
+                for qualifier in relation.qualifiers
+                if isinstance(qualifier.value, EntityRef)
+            )
+        for entity in result.view.entities:
+            original_entity = source.entity(entity.id)
+            assert original_entity is not None
+            assert entity.kind == original_entity.kind
+            assert {p.name: p.value for p in entity.properties} == {
+                p.name: p.value for p in original_entity.properties
+            }
+            assert all(
+                prop.value.entity_id in entity_ids
+                for prop in entity.properties
+                if isinstance(prop.value, EntityRef)
+            )
+        print(
+            {
+                "target": probe.target_id,
+                "matches": len(result.matches),
+                "view_entities": len(result.view.entities),
+                "view_relations": len(result.view.relations),
+                "query_seconds": round(query_seconds, 6),
+            }
+        )
+    print(
+        {
+            "fixture": CAREER.name,
+            "source_state_id": loaded.source_state_id,
+            "load_seconds": round(load_seconds, 6),
+            "reconstruction_seconds": round(reconstruction_seconds, 6),
+        }
+    )
 
 
 def test_live_projection_counts_ids_and_transaction_rollback(
